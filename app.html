@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PortoQR — Acceso</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:      #080c0a;
+    --bg2:     #0d1210;
+    --bg3:     #111816;
+    --surface: #141c19;
+    --border:  #1e2b27;
+    --border2: #2a3d38;
+    --green:   #00e676;
+    --green2:  #00c853;
+    --green3:  #69f0ae;
+    --red:     #ff1744;
+    --amber:   #ffab00;
+    --text:    #e8f5e9;
+    --text2:   #78909c;
+    --text3:   #37474f;
+    --mono: 'Poppins', sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { height: 100%; }
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(0,230,118,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,230,118,.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+  /* Glow */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -30%; left: 50%; transform: translateX(-50%);
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(0,230,118,.06) 0%, transparent 65%);
+    pointer-events: none;
+  }
+
+  .login-wrap {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 420px; padding: 24px;
+  }
+
+  /* Logo */
+  .logo {
+    text-align: center; margin-bottom: 40px;
+  }
+
+  .logo-name {
+    font-family: 'Poppins', sans-serif;
+    font-size: 32px; font-weight: 800;
+    letter-spacing: -.02em; color: var(--text);
+    margin-bottom: 6px;
+  }
+  .logo-name span { color: var(--green); }
+  .logo-sub {
+    font-size: 11px; color: var(--text3);
+    letter-spacing: .2em; text-transform: uppercase;
+    margin-top: 4px; font-family: 'Poppins', sans-serif;
+  }
+
+  /* Card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px; padding: 32px;
+    box-shadow: 0 32px 64px rgba(0,0,0,.4);
+  }
+  .card-title {
+    font-size: 13px; color: var(--text2);
+    font-family: 'Poppins', sans-serif; letter-spacing: .12em;
+    text-transform: uppercase; margin-bottom: 24px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .card-title::before {
+    content: ''; display: block;
+    width: 20px; height: 1px; background: var(--green); opacity: .5;
+  }
+
+  .field { margin-bottom: 18px; }
+  .field label {
+    display: block; font-size: 10px; color: var(--text3);
+    font-family: 'Poppins', sans-serif; letter-spacing: .15em;
+    text-transform: uppercase; margin-bottom: 8px;
+  }
+  .field input, .field select {
+    width: 100%;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 13px 16px;
+    color: var(--text); font-family: 'Poppins', sans-serif; font-size: 14px;
+    outline: none; transition: border-color .2s;
+  }
+  .field input:focus, .field select:focus { border-color: var(--green); }
+  .field input::placeholder { color: var(--text3); }
+  .field select option { background: var(--bg2); }
+
+  .btn-login {
+    width: 100%; padding: 15px;
+    background: var(--green); border: none; border-radius: 8px;
+    font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 700;
+    color: var(--bg); letter-spacing: .1em; text-transform: uppercase;
+    cursor: pointer; transition: all .2s; margin-top: 8px;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .btn-login:hover { background: var(--green3); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,230,118,.2); }
+  .btn-login:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+  .login-err {
+    background: rgba(255,23,68,.08); border: 1px solid rgba(255,23,68,.2);
+    border-radius: 8px; padding: 12px 16px;
+    color: var(--red); font-size: 12px; font-family: 'Poppins', sans-serif;
+    margin-top: 14px; display: none; text-align: center;
+  }
+
+  /* Status dot */
+  .status-row {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    margin-top: 24px;
+    font-size: 11px; color: var(--text3); font-family: 'Poppins', sans-serif;
+  }
+  .status-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,230,118,.4); }
+    50%      { opacity: .7; box-shadow: 0 0 0 6px rgba(0,230,118,0); }
+  }
+
+  /* Loading spinner */
+  .spinner {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid rgba(8,12,10,.3);
+    border-top-color: var(--bg);
+    animation: spin .6s linear infinite;
+    display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="login-wrap">
+  <div class="logo">
+
+    <div class="logo-name">Porto<span>QR</span></div>
+    <div class="logo-sub">Sistema de Control de Acceso</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Iniciar sesión</div>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="correo@ejemplo.com" autocomplete="email"/>
+    </div>
+    <div class="field">
+      <label>Contraseña</label>
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
+    </div>
+    <button class="btn-login" id="btn-login" onclick="doLogin()">
+      <span id="btn-text">Acceder</span>
+      <div class="spinner" id="spinner"></div>
+      <svg id="btn-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+
+  <div class="status-row">
+    <div class="status-dot"></div>
+    Sistema operativo
+  </div>
+</div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────
+const SUPABASE_URL = "https://ghgwegvvawhgzmzjspkl.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdoZ3dlZ3Z2YXdoZ3ptempzcGtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1ODQ3ODAsImV4cCI6MjA4ODE2MDc4MH0.cbR9QXTWqD4XEdPSj1tz7Mzd9MuAg4VmK5T4es4AKP8";
+
+// ── SUPABASE HELPER ─────────────────────────────────────────
+const sb = {
+  async get(table, filter = "") {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=*${filter}`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY }
+    });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  }
+};
+
+// ── HASH simple SHA-256 ──────────────────────────────────────
+async function sha256(str) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,"0")).join("");
+}
+
+// ── LOGIN ────────────────────────────────────────────────────
+async function doLogin() {
+  const email = document.getElementById("login-email").value.trim().toLowerCase();
+  const pass  = document.getElementById("login-pass").value;
+  const err   = document.getElementById("login-err");
+  const btn   = document.getElementById("btn-login");
+  err.style.display = "none";
+
+  if (!email || !pass) {
+    showErr("Ingresa tu email y contraseña"); return;
+  }
+
+  // Loading state
+  btn.disabled = true;
+  document.getElementById("btn-text").textContent = "Verificando...";
+  document.getElementById("spinner").style.display = "block";
+  document.getElementById("btn-arrow").style.display = "none";
+
+  try {
+    const hash = await sha256(pass);
+    const users = await sb.get("usuarios", `&email=eq.${encodeURIComponent(email)}&password_hash=eq.${hash}&activo=eq.true`);
+
+    if (!users.length) {
+      showErr("⚠ Email o contraseña incorrectos"); return;
+    }
+
+    const user = users[0];
+    // Guardar sesión
+    sessionStorage.setItem("aqr_user", JSON.stringify({
+      id: user.id, nombre: user.nombre, rol: user.rol,
+      propiedad_id: user.propiedad_id, unidad_id: user.unidad_id
+    }));
+
+    // Redirigir según rol
+    const destinos = {
+      superadmin:"admin.html",
+      admin:     "admin.html",
+      residente: "residente.html",
+      guardia:   "guardia.html"
+    };
+    window.location.href = destinos[user.rol] || "index.html";
+
+  } catch(e) {
+    showErr("Error de conexión. Intenta de nuevo.");
+    console.error(e);
+  } finally {
+    btn.disabled = false;
+    document.getElementById("btn-text").textContent = "Acceder";
+    document.getElementById("spinner").style.display = "none";
+    document.getElementById("btn-arrow").style.display = "block";
+  }
+}
+
+function showErr(msg) {
+  const el = document.getElementById("login-err");
+  el.textContent = msg; el.style.display = "block";
+}
+
+// Verificar si ya hay sesión
+const session = sessionStorage.getItem("aqr_user");
+if (session) {
+  const u = JSON.parse(session);
+  const destinos = { superadmin:"admin.html", admin:"admin.html", residente:"residente.html", guardia:"guardia.html" };
+  window.location.href = destinos[u.rol] || "index.html";
+}
+</script>
+</body>
+</html>

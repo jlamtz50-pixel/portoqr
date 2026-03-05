@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PortoQR — Verificar Acceso</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --bg:#080c0a;--surface:#111816;--border:#1e2b27;
+    --green:#00e676;--green-bg:rgba(0,230,118,.08);
+    --red:#ff1744;--red-bg:rgba(255,23,68,.08);
+    --amber:#ffab00;--amber-bg:rgba(255,171,0,.08);
+    --text:#e8f5e9;--text2:#78909c;--text3:#37474f;
+    --mono:'Poppins',sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    font-family:'Poppins',sans-serif;
+    background:var(--bg);color:var(--text);
+    min-height:100vh;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    padding:24px;position:relative;overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* Grid BG */
+  body::before{
+    content:'';position:fixed;inset:0;pointer-events:none;
+    background-image:
+      linear-gradient(rgba(0,230,118,.025) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(0,230,118,.025) 1px,transparent 1px);
+    background-size:48px 48px;
+  }
+
+  /* Glow dinámico */
+  .glow{
+    position:fixed;top:-20%;left:50%;transform:translateX(-50%);
+    width:500px;height:500px;border-radius:50%;
+    pointer-events:none;transition:background .5s;
+    background:radial-gradient(circle,rgba(0,230,118,.07) 0%,transparent 65%);
+  }
+  .glow.rojo{background:radial-gradient(circle,rgba(255,23,68,.1) 0%,transparent 65%);}
+  .glow.verde{background:radial-gradient(circle,rgba(0,230,118,.1) 0%,transparent 65%);}
+  .glow.amber{background:radial-gradient(circle,rgba(255,171,0,.08) 0%,transparent 65%);}
+
+  .wrap{
+    position:relative;z-index:1;
+    width:100%;max-width:420px;
+  }
+
+  /* Logo top */
+  .logo{
+    text-align:center;margin-bottom:32px;
+    font-family:'Poppins',sans-serif;font-size:14px;color:var(--text3);
+    letter-spacing:.15em;text-transform:uppercase;
+  }
+  .logo span{color:var(--green);}
+
+  /* ESTADO CARD */
+  .estado-card{
+    border-radius:20px;padding:32px 28px;text-align:center;
+    border:1px solid;margin-bottom:16px;
+    animation:popIn .4s cubic-bezier(.175,.885,.32,1.275);
+  }
+  @keyframes popIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+
+  .estado-card.permitido{background:var(--green-bg);border-color:rgba(0,230,118,.3);}
+  .estado-card.denegado {background:var(--red-bg);  border-color:rgba(255,23,68,.3);}
+  .estado-card.cargando {background:var(--surface);  border-color:var(--border);}
+  .estado-card.salida   {background:var(--amber-bg); border-color:rgba(255,171,0,.3);}
+
+  .estado-icon{font-size:64px;margin-bottom:16px;display:block;animation:bounce .5s ease .2s both;}
+  @keyframes bounce{0%{transform:scale(0)}60%{transform:scale(1.1)}100%{transform:scale(1)}}
+
+  .estado-titulo{
+    font-size:26px;font-weight:800;letter-spacing:-.02em;
+    font-family:'Poppins',sans-serif;margin-bottom:8px;
+  }
+  .estado-sub{font-size:14px;color:var(--text2);}
+
+  /* DATOS CARD */
+  .datos-card{
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:16px;padding:20px;margin-bottom:16px;
+    animation:slideUp .3s ease .1s both;
+  }
+  @keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  .datos-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .dato{background:rgba(0,0,0,.2);border-radius:10px;padding:12px 14px;}
+  .dato-label{font-size:9px;color:var(--text3);font-family:'Poppins',sans-serif;letter-spacing:.16em;text-transform:uppercase;margin-bottom:5px;}
+  .dato-val{font-size:14px;font-weight:700;}
+  .dato-full{grid-column:1/-1;}
+
+  /* TIMER */
+  .timer-wrap{
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:12px;padding:14px 18px;margin-bottom:16px;
+    display:flex;align-items:center;gap:12px;
+    animation:slideUp .3s ease .2s both;
+  }
+  .timer-label{font-size:11px;color:var(--text3);font-family:'Poppins',sans-serif;letter-spacing:.12em;text-transform:uppercase;}
+  .timer-val{font-size:13px;font-family:'Poppins',sans-serif;color:var(--amber);margin-left:auto;}
+  .timer-bar{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+  .timer-fill{height:100%;background:var(--amber);transition:width 1s linear;}
+
+  /* ACCIONES */
+  .acciones{display:grid;grid-template-columns:1fr 1fr;gap:10px;animation:slideUp .3s ease .3s both;}
+  .btn-accion{
+    padding:16px;border-radius:12px;font-family:'Poppins',sans-serif;
+    font-size:12px;font-weight:700;letter-spacing:.1em;
+    text-transform:uppercase;border:none;cursor:pointer;transition:all .2s;
+  }
+  .btn-permitir{background:var(--green);color:var(--bg);}
+  .btn-permitir:hover{background:#69f0ae;transform:translateY(-1px);}
+  .btn-denegar {background:var(--red-bg);color:var(--red);border:1px solid rgba(255,23,68,.3);}
+  .btn-denegar:hover{background:rgba(255,23,68,.15);}
+  .btn-full{grid-column:1/-1;}
+
+  /* LOADING */
+  .spinner{
+    width:40px;height:40px;border-radius:50%;
+    border:3px solid rgba(0,230,118,.1);
+    border-top-color:var(--green);
+    animation:spin .8s linear infinite;
+    margin:0 auto 20px;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* REGISTRADO */
+  .registrado-badge{
+    display:inline-flex;align-items:center;gap:6px;
+    background:var(--green-bg);border:1px solid rgba(0,230,118,.3);
+    border-radius:20px;padding:6px 16px;
+    font-size:12px;font-family:'Poppins',sans-serif;color:var(--green);
+    margin-top:12px;
+  }
+
+  .footer-logo{
+    text-align:center;margin-top:20px;
+    font-size:10px;color:var(--text3);font-family:'Poppins',sans-serif;
+    letter-spacing:.15em;
+  }
+  .footer-logo span{color:var(--green);}
+</style>
+</head>
+<body>
+
+<div class="glow" id="glow"></div>
+
+<div class="wrap">
+  <div class="logo">Porto<span>QR</span> · Verificación</div>
+
+  <!-- Estado principal -->
+  <div class="estado-card cargando" id="estado-card">
+    <div class="spinner" id="spinner"></div>
+    <div class="estado-titulo" id="estado-titulo">Verificando...</div>
+    <div class="estado-sub" id="estado-sub">Consultando código de acceso</div>
+  </div>
+
+  <!-- Datos del visitante -->
+  <div class="datos-card" id="datos-card" style="display:none">
+    <div class="datos-grid" id="datos-grid"></div>
+  </div>
+
+  <!-- Timer (si tiene expiración) -->
+  <div class="timer-wrap" id="timer-wrap" style="display:none">
+    <div>
+      <div class="timer-label">Tiempo restante</div>
+      <div class="timer-val" id="timer-val">—</div>
+    </div>
+    <div class="timer-bar"><div class="timer-fill" id="timer-fill" style="width:100%"></div></div>
+  </div>
+
+  <!-- Acciones (solo si hay sesión de guardia) -->
+  <div class="acciones" id="acciones" style="display:none">
+    <button class="btn-accion btn-permitir" id="btn-permitir" onclick="confirmar(true)">✓ Permitir</button>
+    <button class="btn-accion btn-denegar"  onclick="confirmar(false)">✗ Denegar</button>
+  </div>
+
+  <div class="footer-logo">Powered by <span>AppNovaDev</span></div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://ghgwegvvawhgzmzjspkl.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdoZ3dlZ3Z2YXdoZ3ptempzcGtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1ODQ3ODAsImV4cCI6MjA4ODE2MDc4MH0.cbR9QXTWqD4XEdPSj1tz7Mzd9MuAg4VmK5T4es4AKP8";
+
+const hd = { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY, "Content-Type": "application/json" };
+
+let invData    = null;
+let esSalida   = false;
+let timerInt   = null;
+let expiraDate = null;
+
+// ── INIT ──────────────────────────────────────────────────────────
+(async function init() {
+  const params = new URLSearchParams(location.search);
+  const code   = params.get("code");
+
+  if (!code) {
+    showEstado("denegado","⚠️","Sin código","No se encontró un código QR en la URL"); return;
+  }
+
+  try {
+    await verificarCodigo(code);
+  } catch(e) {
+    showEstado("denegado","⚠️","Error","No se pudo conectar al servidor");
+    console.error(e);
+  }
+})();
+
+// ── VERIFICAR ─────────────────────────────────────────────────────
+async function verificarCodigo(code) {
+  const r = await fetch(
+    `${SUPABASE_URL}/rest/v1/invitaciones?codigo_qr=eq.${encodeURIComponent(code)}&select=*`,
+    { headers: hd }
+  );
+  const data = await r.json();
+
+  if (!data.length) {
+    showEstado("denegado","❌","QR Inválido","Este código no existe en el sistema");
+    setGlow("rojo"); return;
+  }
+
+  const inv = data[0];
+  invData = inv;
+
+  // Verificar expiración por tiempo
+  if (inv.expira_en && new Date(inv.expira_en) < new Date()) {
+    // Marcar como expirado
+    await fetch(`${SUPABASE_URL}/rest/v1/invitaciones?id=eq.${inv.id}`, {
+      method:"PATCH", headers:hd, body:JSON.stringify({estado:"expirado"})
+    });
+    showEstado("denegado","⏰","QR Expirado","Este código ya no es válido");
+    setGlow("rojo"); return;
+  }
+
+  if (inv.estado === "cancelado") {
+    showEstado("denegado","🚫","Cancelado","Esta invitación fue cancelada");
+    setGlow("rojo"); return;
+  }
+  if (inv.estado === "expirado") {
+    showEstado("denegado","⏰","QR Expirado","Este código ya no es válido");
+    setGlow("rojo"); return;
+  }
+  if (inv.estado === "usado" && inv.tipo !== "permanente") {
+    showEstado("denegado","🔒","Ya Utilizado","Este QR ya fue usado y está invalidado");
+    setGlow("rojo"); return;
+  }
+
+  // Determinar si es entrada o salida
+  const accR = await fetch(
+    `${SUPABASE_URL}/rest/v1/accesos?invitacion_id=eq.${inv.id}&order=created_at.desc&limit=1&select=*`,
+    { headers: hd }
+  );
+  const accesos = await accR.json();
+  esSalida = accesos.length > 0 && accesos[0].tipo === "entrada";
+
+  // Mostrar datos
+  const tipo = esSalida ? "salida" : "permitido";
+  const icon = esSalida ? "🟡" : "✅";
+  const titulo = esSalida ? "SALIDA" : "ACCESO PERMITIDO";
+  const sub    = esSalida
+    ? `Registrar salida de ${inv.nombre_visitante}`
+    : `Bienvenido ${inv.nombre_visitante}`;
+
+  showEstado(tipo, icon, titulo, sub);
+  setGlow(esSalida ? "amber" : "verde");
+  mostrarDatos(inv);
+
+  // Timer
+  if (inv.expira_en) {
+    expiraDate = new Date(inv.expira_en);
+    iniciarTimer();
+  }
+
+  // Mostrar acciones si el guardia tiene sesión
+  const session = sessionStorage.getItem("aqr_user");
+  if (session) {
+    const u = JSON.parse(session);
+    if (u.rol === "guardia") {
+      document.getElementById("acciones").style.display = "grid";
+      document.getElementById("btn-permitir").textContent =
+        esSalida ? "✓ Registrar Salida" : "✓ Permitir Entrada";
+    }
+  }
+}
+
+// ── MOSTRAR ESTADO ────────────────────────────────────────────────
+function showEstado(tipo, icon, titulo, sub) {
+  const card = document.getElementById("estado-card");
+  card.className = `estado-card ${tipo}`;
+  card.innerHTML = `
+    <span class="estado-icon">${icon}</span>
+    <div class="estado-titulo">${titulo}</div>
+    <div class="estado-sub">${sub}</div>
+  `;
+}
+
+function mostrarDatos(inv) {
+  const card = document.getElementById("datos-card");
+  const grid = document.getElementById("datos-grid");
+  card.style.display = "block";
+
+  const filas = [
+    ["Visitante", inv.nombre_visitante, true],
+    ["Teléfono", inv.telefono || "—", false],
+    ["Motivo", inv.empresa || inv.motivo || "—", false],
+    ["Placa", inv.placa || "—", false],
+    ["Vehículo", [inv.color_auto, inv.modelo_auto].filter(Boolean).join(" ") || "—", false],
+    ["Tipo QR", inv.tipo === "permanente" ? "🔄 Permanente" : inv.tipo === "urgente" ? "⚡ Urgente" : "🎫 Visita", false],
+  ];
+
+  grid.innerHTML = filas.map(([label, val, full]) => `
+    <div class="dato${full?" dato-full":""}">
+      <div class="dato-label">${label}</div>
+      <div class="dato-val">${val}</div>
+    </div>`).join("");
+}
+
+// ── TIMER ─────────────────────────────────────────────────────────
+function iniciarTimer() {
+  document.getElementById("timer-wrap").style.display = "flex";
+  const total = expiraDate - new Date(invData.created_at);
+
+  function tick() {
+    const restante = expiraDate - new Date();
+    if (restante <= 0) {
+      clearInterval(timerInt);
+      document.getElementById("timer-val").textContent = "Expirado";
+      document.getElementById("timer-fill").style.width = "0%";
+      showEstado("denegado","⏰","QR Expirado","El tiempo de este código ha vencido");
+      setGlow("rojo");
+      document.getElementById("acciones").style.display = "none";
+      return;
+    }
+    const h = Math.floor(restante/3600000);
+    const m = Math.floor((restante%3600000)/60000);
+    const s = Math.floor((restante%60000)/1000);
+    document.getElementById("timer-val").textContent =
+      h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${s}s` : `${s}s`;
+    const pct = Math.min(100, (restante / total) * 100);
+    document.getElementById("timer-fill").style.width = pct + "%";
+    // Color del timer
+    const fill = document.getElementById("timer-fill");
+    if (pct < 20) fill.style.background = "var(--red)";
+    else if (pct < 50) fill.style.background = "var(--amber)";
+    else fill.style.background = "var(--green)";
+  }
+  tick();
+  timerInt = setInterval(tick, 1000);
+}
+
+// ── CONFIRMAR (guardia) ───────────────────────────────────────────
+async function confirmar(permitir) {
+  if (!invData) return;
+  const session = sessionStorage.getItem("aqr_user");
+  if (!session) return;
+  const guardia = JSON.parse(session);
+
+  const btns = document.querySelectorAll(".btn-accion");
+  btns.forEach(b => { b.disabled = true; b.style.opacity = ".5"; });
+
+  try {
+    const tipoAcceso = esSalida ? "salida" : "entrada";
+    await fetch(`${SUPABASE_URL}/rest/v1/accesos`, {
+      method:"POST",
+      headers:{...hd, Prefer:"return=representation"},
+      body:JSON.stringify({
+        invitacion_id:    invData.id,
+        guardia_id:       guardia.id,
+        propiedad_id:     invData.propiedad_id,
+        tipo:             tipoAcceso,
+        resultado:        permitir?"permitido":"denegado",
+        nombre_visitante: invData.nombre_visitante,
+        placa:            invData.placa,
+      })
+    });
+
+    if (permitir && esSalida && invData.tipo !== "permanente") {
+      await fetch(`${SUPABASE_URL}/rest/v1/invitaciones?id=eq.${invData.id}`,{
+        method:"PATCH", headers:hd, body:JSON.stringify({estado:"usado"})
+      });
+    }
+    if (permitir && !esSalida && invData.tipo === "visita") {
+      const usos = (invData.usos_actuales||0)+1;
+      await fetch(`${SUPABASE_URL}/rest/v1/invitaciones?id=eq.${invData.id}`,{
+        method:"PATCH", headers:hd,
+        body:JSON.stringify({ usos_actuales:usos, estado: usos>=(invData.max_usos||1)?"usado":"activo" })
+      });
+    }
+
+    clearInterval(timerInt);
+    const icon   = permitir ? (esSalida?"🟡":"✅") : "🚫";
+    const titulo = permitir ? (esSalida?"SALIDA REGISTRADA":"ENTRADA REGISTRADA") : "ACCESO DENEGADO";
+    const sub    = permitir ? invData.nombre_visitante : "Acceso no autorizado";
+    const tipo   = permitir ? (esSalida?"salida":"permitido") : "denegado";
+
+    showEstado(tipo, icon, titulo, sub);
+    setGlow(permitir ? (esSalida?"amber":"verde") : "rojo");
+    document.getElementById("acciones").style.display = "none";
+    document.getElementById("timer-wrap").style.display = "none";
+
+    // Badge registrado
+    document.getElementById("datos-card").insertAdjacentHTML("afterend",
+      `<div style="text-align:center"><span class="registrado-badge">✓ Acceso registrado en bitácora</span></div>`
+    );
+
+    if (navigator.vibrate) navigator.vibrate(permitir?[100]:[100,50,100]);
+
+  } catch(e) {
+    btns.forEach(b => { b.disabled = false; b.style.opacity = "1"; });
+    alert("Error al registrar: " + e.message);
+  }
+}
+
+// ── GLOW ──────────────────────────────────────────────────────────
+function setGlow(color) {
+  const g = document.getElementById("glow");
+  g.className = `glow ${color}`;
+}
+</script>
+</body>
+</html>

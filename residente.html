@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PortoQR — Residente</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:#080c0a;--bg2:#0d1210;--surface:#111816;--surface2:#141c19;
+    --border:#1e2b27;--border2:#2a3d38;
+    --green:#00e676;--green2:#00c853;--green-bg:rgba(0,230,118,.08);
+    --red:#ff1744;--red-bg:rgba(255,23,68,.08);
+    --amber:#ffab00;--amber-bg:rgba(255,171,0,.08);
+    --blue:#40c4ff;--blue-bg:rgba(64,196,255,.08);
+    --text:#e8f5e9;--text2:#78909c;--text3:#37474f;
+    --mono:'Poppins',sans-serif; --r:12px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;}
+  body::before{content:'';position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(rgba(0,230,118,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,230,118,.025) 1px,transparent 1px);background-size:48px 48px;}
+
+  /* TOPBAR */
+  .topbar{position:sticky;top:0;z-index:50;background:rgba(8,12,10,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;justify-content:space-between;align-items:center;}
+  .topbar-brand{font-family:'Poppins',sans-serif;font-size:16px;font-weight:700;}
+  .topbar-brand span{color:var(--green);}
+  .topbar-right{display:flex;align-items:center;gap:12px;}
+  .topbar-user{font-size:12px;color:var(--text2);font-family:'Poppins',sans-serif;}
+  .btn-logout{background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--text3);font-size:11px;cursor:pointer;font-family:'Poppins',sans-serif;transition:.2s;}
+  .btn-logout:hover{color:var(--red);border-color:var(--red);}
+
+  /* TABS */
+  .tabs{display:grid;grid-template-columns:repeat(3,1fr);background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:57px;z-index:40;}
+  .tab{padding:14px 8px;text-align:center;font-size:11px;font-family:'Poppins',sans-serif;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);cursor:pointer;border:none;background:none;transition:.15s;border-bottom:2px solid transparent;}
+  .tab.active{color:var(--green);border-bottom-color:var(--green);}
+  .tab-icon{font-size:18px;display:block;margin-bottom:4px;}
+
+  /* PANELS */
+  .panel{display:none;padding:24px;max-width:800px;margin:0 auto;}
+  .panel.active{display:block;}
+
+  /* SECTION TITLE */
+  .sec-title{font-size:11px;font-family:'Poppins',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:var(--text3);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+  .sec-title::before{content:'';display:block;width:16px;height:1px;background:var(--green);opacity:.4;}
+
+  /* CARD */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:22px;margin-bottom:16px;}
+  .card-title{font-size:13px;font-weight:700;color:var(--text2);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+
+  /* FORM */
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:10px;color:var(--text3);font-family:'Poppins',sans-serif;letter-spacing:.14em;text-transform:uppercase;margin-bottom:7px;}
+  .field input,.field select,.field textarea{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:13px 14px;color:var(--text);font-family:'Poppins',sans-serif;font-size:14px;outline:none;transition:.2s;}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--green);}
+  .field input::placeholder,.field textarea::placeholder{color:var(--text3);}
+  .field select option{background:var(--bg2);}
+  .field textarea{resize:vertical;min-height:70px;}
+  .field-full{grid-column:1/-1;}
+
+  /* DURATION SELECTOR */
+  .duration-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:2px;}
+  .dur-opt{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;transition:.2s;font-size:12px;font-family:'Poppins',sans-serif;}
+  .dur-opt:hover{border-color:var(--green);}
+  .dur-opt.selected{background:var(--green-bg);border-color:var(--green);color:var(--green);}
+  .dur-opt-label{font-size:9px;color:var(--text3);margin-top:3px;text-transform:uppercase;letter-spacing:.1em;}
+
+  /* TIPO TABS */
+  .tipo-tabs{display:flex;gap:8px;margin-bottom:18px;}
+  .tipo-tab{flex:1;padding:10px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;text-align:center;cursor:pointer;transition:.2s;font-size:12px;font-family:'Poppins',sans-serif;font-weight:700;}
+  .tipo-tab.selected{background:var(--green-bg);border-color:var(--green);color:var(--green);}
+  .tipo-tab-icon{font-size:20px;display:block;margin-bottom:4px;}
+
+  /* BTNS */
+  .btn{padding:12px 20px;border-radius:8px;font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border:none;cursor:pointer;transition:.2s;}
+  .btn-primary{background:var(--green);color:var(--bg);}
+  .btn-primary:hover{background:#69f0ae;}
+  .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border);}
+  .btn-ghost:hover{border-color:var(--text2);}
+  .btn-red{background:var(--red-bg);color:var(--red);border:1px solid rgba(255,23,68,.3);}
+  .btn-full{width:100%;padding:15px;}
+  .btn-sm{padding:6px 12px;font-size:11px;}
+
+  /* QR CARD */
+  .qr-card{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);padding:24px;text-align:center;animation:fadeIn .3s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .qr-nombre{font-size:18px;font-weight:700;margin-bottom:6px;}
+  .qr-detail{font-size:12px;color:var(--text2);font-family:'Poppins',sans-serif;margin-bottom:16px;}
+  canvas{margin:0 auto 16px;display:block;border-radius:8px;}
+  .qr-exp{font-size:11px;color:var(--text2);font-family:'Poppins',sans-serif;}
+  .qr-link{font-size:11px;color:var(--green);font-family:'Poppins',sans-serif;margin-top:6px;word-break:break-all;}
+
+  /* INVITACIONES LIST */
+  .inv-list{display:flex;flex-direction:column;gap:10px;}
+  .inv-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;display:flex;gap:14px;align-items:flex-start;transition:.2s;}
+  .inv-item:hover{border-color:var(--border2);}
+  .inv-status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+  .inv-info{flex:1;}
+  .inv-nombre{font-size:14px;font-weight:700;}
+  .inv-detail{font-size:11px;color:var(--text2);font-family:'Poppins',sans-serif;margin-top:4px;}
+  .inv-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+
+  /* BADGES */
+  .badge{display:inline-block;border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;font-family:'Poppins',sans-serif;letter-spacing:.05em;}
+  .badge-activo  {background:var(--green-bg);color:var(--green);border:1px solid rgba(0,230,118,.3);}
+  .badge-usado   {background:rgba(90,90,90,.15);color:var(--text3);border:1px solid var(--border);}
+  .badge-expirado{background:rgba(90,90,90,.15);color:var(--text3);border:1px solid var(--border);}
+  .badge-cancelado{background:var(--red-bg);color:var(--red);border:1px solid rgba(255,23,68,.3);}
+  .badge-permanente{background:var(--blue-bg);color:var(--blue);border:1px solid rgba(64,196,255,.3);}
+  .badge-urgente {background:var(--amber-bg);color:var(--amber);border:1px solid rgba(255,171,0,.3);}
+  .badge-visita  {background:var(--green-bg);color:var(--green);border:1px solid rgba(0,230,118,.3);}
+
+  /* STATS */
+  .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;text-align:center;}
+  .stat-val{font-size:26px;font-weight:700;font-family:'Poppins',sans-serif;}
+  .stat-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.12em;margin-top:4px;font-family:'Poppins',sans-serif;}
+
+  .empty{text-align:center;padding:40px;color:var(--text3);font-family:'Poppins',sans-serif;font-size:12px;}
+
+  .alert{padding:12px 16px;border-radius:8px;font-size:12px;font-family:'Poppins',sans-serif;margin-bottom:14px;}
+  .alert-ok {background:var(--green-bg);border:1px solid rgba(0,230,118,.3);color:var(--green);}
+  .alert-err{background:var(--red-bg);border:1px solid rgba(255,23,68,.3);color:var(--red);}
+
+  @media(max-width:768px){
+    .topbar{padding:12px 16px;}
+    .topbar-brand{font-size:15px;}
+    .tabs{top:53px;}
+    .tab{font-size:11px;padding:12px 8px;}
+    .panel{padding:16px;}
+    .form-grid{grid-template-columns:1fr;}
+    .duration-grid{grid-template-columns:1fr 1fr;}
+    .stats-row{grid-template-columns:1fr 1fr;}
+    .content{padding:0 12px 80px;}
+  }
+  @media(max-width:400px){
+    .stats-row{grid-template-columns:1fr;}
+    .duration-grid{grid-template-columns:1fr 1fr;}
+    .topbar-right{gap:8px;}
+  }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-brand">Porto<span>QR</span></div>
+  <div class="topbar-right">
+    <div class="topbar-user" id="topbar-user">Residente</div>
+    <button class="btn-logout" onclick="openCambiarPass()" style="border-color:var(--amber);color:var(--amber)">🔑</button>
+    <button class="btn-logout" onclick="logout()">Salir</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('nueva')" id="tab-nueva">
+    <span class="tab-icon">➕</span>Nueva Inv.
+  </button>
+  <button class="tab" onclick="switchTab('mis-inv')" id="tab-mis-inv">
+    <span class="tab-icon">🎫</span>Mis QRs
+  </button>
+  <button class="tab" onclick="switchTab('historial')" id="tab-historial">
+    <span class="tab-icon">📋</span>Historial
+  </button>
+</div>
+
+<!-- ── NUEVA INVITACIÓN ── -->
+<div class="panel active" id="panel-nueva">
+  <div id="form-alert"></div>
+
+  <!-- Tipo de invitación -->
+  <div class="sec-title">Tipo de invitación</div>
+  <div class="tipo-tabs">
+    <div class="tipo-tab selected" onclick="selTipo('visita')" id="tipo-visita">
+      <span class="tipo-tab-icon">🎫</span>Visita
+    </div>
+    <div class="tipo-tab" onclick="selTipo('permanente')" id="tipo-permanente">
+      <span class="tipo-tab-icon">🔄</span>Frecuente
+    </div>
+  </div>
+
+  <!-- Datos del visitante -->
+  <div class="card">
+    <div class="card-title">👤 Datos del visitante</div>
+    <div class="form-grid">
+      <div class="field field-full">
+        <label>Nombre completo *</label>
+        <input type="text" id="f-nombre" placeholder="Ej: Carlos Martínez"/>
+      </div>
+      <div class="field">
+        <label>Teléfono</label>
+        <input type="tel" id="f-tel" placeholder="81 1234 5678"/>
+      </div>
+      <div class="field">
+        <label>Empresa / Motivo</label>
+        <input type="text" id="f-empresa" placeholder="Ej: Plomero, Amigo..."/>
+      </div>
+    </div>
+  </div>
+
+  <!-- Datos del vehículo -->
+  <div class="card">
+    <div class="card-title">🚗 Vehículo (opcional)</div>
+    <div class="form-grid">
+      <div class="field">
+        <label>Placa</label>
+        <input type="text" id="f-placa" placeholder="ABC-123" style="text-transform:uppercase"/>
+      </div>
+      <div class="field">
+        <label>Modelo</label>
+        <input type="text" id="f-modelo" placeholder="Ej: Tsuru, Aveo..."/>
+      </div>
+      <div class="field field-full">
+        <label>Color</label>
+        <input type="text" id="f-color" placeholder="Ej: Rojo, Blanco..."/>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vigencia (solo visita) -->
+  <div class="card" id="card-vigencia">
+    <div class="card-title">⏱ Vigencia del QR</div>
+    <div class="duration-grid">
+      <div class="dur-opt selected" onclick="selDuracion(2,this)">
+        <div>2h</div><div class="dur-opt-label">Horas</div>
+      </div>
+      <div class="dur-opt" onclick="selDuracion(8,this)">
+        <div>8h</div><div class="dur-opt-label">Horas</div>
+      </div>
+      <div class="dur-opt" onclick="selDuracion(24,this)">
+        <div>24h</div><div class="dur-opt-label">Un día</div>
+      </div>
+      <div class="dur-opt" onclick="selDuracion(72,this)">
+        <div>3d</div><div class="dur-opt-label">Tres días</div>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary btn-full" onclick="generarInvitacion()">
+    ✓ Generar Invitación QR
+  </button>
+
+  <!-- QR Generado -->
+  <div id="qr-result" style="margin-top:20px;display:none">
+    <div class="qr-card">
+      <div class="qr-nombre" id="qr-nombre">—</div>
+      <div class="qr-detail" id="qr-detail">—</div>
+      <div style="background:#ffffff;padding:24px;border-radius:12px;display:inline-block;margin:0 auto 16px;box-shadow:0 0 0 20px #ffffff"><div id="qr-canvas"></div></div>
+      <div class="qr-exp" id="qr-exp">—</div>
+      <div class="qr-link" id="qr-link"></div>
+      <button onclick="verQRFullscreen()" style="width:100%;padding:14px;background:#000;border:none;border-radius:8px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;color:#fff;cursor:pointer;margin-top:8px;letter-spacing:.08em">
+        🔲 Ver QR en pantalla completa
+      </button>
+      <button onclick="compartirQR()" style="width:100%;padding:14px;background:var(--green);border:none;border-radius:8px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;color:var(--bg);cursor:pointer;margin-top:8px;letter-spacing:.08em">
+        📤 Compartir con Visitante / Guardia
+      </button>
+      <button class="btn btn-ghost btn-sm" onclick="resetForm()" style="width:100%;margin-top:8px">+ Otra invitación</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MIS INVITACIONES ── -->
+<div class="panel" id="panel-mis-inv">
+  <div class="stats-row">
+    <div class="stat"><div class="stat-val" style="color:var(--green)" id="st-activas">—</div><div class="stat-label">Activas</div></div>
+    <div class="stat"><div class="stat-val" id="st-total">—</div><div class="stat-label">Total</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--blue)" id="st-perm">—</div><div class="stat-label">Fijas</div></div>
+  </div>
+  <div class="sec-title">Invitaciones activas</div>
+  <div id="inv-activas-list"><div class="empty">Cargando...</div></div>
+  <div class="sec-title" style="margin-top:20px">Historial reciente</div>
+  <div id="inv-pasadas-list"><div class="empty">Cargando...</div></div>
+</div>
+
+<!-- ── HISTORIAL DE ACCESOS ── -->
+<div class="panel" id="panel-historial">
+  <div class="sec-title">Visitas registradas</div>
+  <div id="historial-list"><div class="empty">Cargando...</div></div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://ghgwegvvawhgzmzjspkl.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdoZ3dlZ3Z2YXdoZ3ptempzcGtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1ODQ3ODAsImV4cCI6MjA4ODE2MDc4MH0.cbR9QXTWqD4XEdPSj1tz7Mzd9MuAg4VmK5T4es4AKP8";
+
+let currentUser = null;
+let duracionHoras = 2;
+let tipoInv = "visita";
+let invitaciones = [];
+
+// ── INIT ──────────────────────────────────────────────────────────
+(function init() {
+  const s = sessionStorage.getItem("aqr_user");
+  if (!s) { window.location.href = "app.html"; return; }
+  currentUser = JSON.parse(s);
+  if (currentUser.rol !== "residente") { window.location.href = "app.html"; return; }
+  document.getElementById("topbar-user").textContent = currentUser.nombre;
+})();
+
+// ── SUPABASE ──────────────────────────────────────────────────────
+const h = { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY, "Content-Type": "application/json" };
+async function sbGet(table, qs = "") {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=*${qs}`, { headers: h });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function sbInsert(table, data) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+    method: "POST", headers: { ...h, Prefer: "return=representation" }, body: JSON.stringify(data)
+  });
+  if (!r.ok) throw new Error(await r.text());
+  const res = await r.json(); return Array.isArray(res) ? res[0] : res;
+}
+async function sbUpdate(table, id, data) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
+    method: "PATCH", headers: h, body: JSON.stringify(data)
+  });
+  if (!r.ok) throw new Error(await r.text());
+}
+async function sha256(s) {
+  const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2,"0")).join("");
+}
+
+// ── TABS ──────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.getElementById("panel-" + tab).classList.add("active");
+  document.getElementById("tab-" + tab).classList.add("active");
+  if (tab === "mis-inv") loadMisInvitaciones();
+  if (tab === "historial") loadHistorial();
+}
+
+// ── TIPO Y DURACIÓN ───────────────────────────────────────────────
+function selTipo(t) {
+  tipoInv = t;
+  document.querySelectorAll(".tipo-tab").forEach(el => el.classList.remove("selected"));
+  document.getElementById("tipo-" + t).classList.add("selected");
+  document.getElementById("card-vigencia").style.display = t === "permanente" ? "none" : "block";
+}
+
+function selDuracion(h, el) {
+  duracionHoras = h;
+  document.querySelectorAll(".dur-opt").forEach(e => e.classList.remove("selected"));
+  el.classList.add("selected");
+}
+
+// ── GENERAR INVITACIÓN ────────────────────────────────────────────
+async function generarInvitacion() {
+  const nombre = document.getElementById("f-nombre").value.trim();
+  if (!nombre) { showAlert("err", "⚠ Ingresa el nombre del visitante"); return; }
+
+  try {
+    let expira = null;
+    if (tipoInv === "visita") {
+      expira = new Date();
+      expira.setHours(expira.getHours() + duracionHoras);
+    }
+
+    const data = {
+      nombre_visitante: nombre,
+      telefono:   document.getElementById("f-tel").value.trim() || null,
+      empresa:    document.getElementById("f-empresa").value.trim() || null,
+      motivo:     document.getElementById("f-empresa").value.trim() || null,
+      placa:      document.getElementById("f-placa").value.trim().toUpperCase() || null,
+      modelo_auto:document.getElementById("f-modelo").value.trim() || null,
+      color_auto: document.getElementById("f-color").value.trim() || null,
+      tipo:       tipoInv,
+      estado:     "activo",
+      residente_id:  currentUser.id,
+      propiedad_id:  currentUser.propiedad_id,
+      unidad_id:     currentUser.unidad_id,
+      expira_en:  expira ? expira.toISOString() : null,
+      max_usos:   tipoInv === "permanente" ? null : 1,
+    };
+
+    const inv = await sbInsert("invitaciones", data);
+    mostrarQR(inv, nombre, expira);
+    showAlert("ok", "✅ Invitación generada correctamente");
+
+  } catch(e) {
+    showAlert("err", "Error: " + e.message);
+  }
+}
+
+function mostrarQR(inv, nombre, expira) {
+  document.getElementById("qr-result").style.display = "block";
+  document.getElementById("qr-nombre").textContent = nombre;
+
+  const partes = [
+    document.getElementById("f-placa").value.trim(),
+    document.getElementById("f-modelo").value.trim(),
+    document.getElementById("f-color").value.trim(),
+  ].filter(Boolean);
+  document.getElementById("qr-detail").textContent = partes.join(" · ") || "Sin vehículo registrado";
+
+  if (expira) {
+    document.getElementById("qr-exp").textContent = "Expira: " + expira.toLocaleString("es-MX");
+  } else {
+    document.getElementById("qr-exp").textContent = "🔄 Acceso permanente — sin expiración automática";
+  }
+
+  const url = `https://portoqr.netlify.app/qr.html?code=${inv.codigo_qr}`;
+  document.getElementById("qr-link").textContent = url;
+
+  renderQR(`https://portoqr.netlify.app/qr.html?code=${inv.codigo_qr}`, "qr-canvas", 256);
+  document.getElementById("qr-result").scrollIntoView({ behavior: "smooth" });
+}
+
+function verQRFullscreen() {
+  const qrUrl = document.getElementById("qr-link")?.textContent || "";
+  const nombre = document.getElementById("qr-nombre")?.textContent || "";
+  const w = window.open("", "_blank");
+  w.document.write(`<!DOCTYPE html><html><head>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
+    <style>
+      *{margin:0;padding:0;box-sizing:border-box;}
+      body{background:#ffffff;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:40px;}
+      h2{font-family:'Poppins',sans-serif;font-size:20px;margin-bottom:24px;text-align:center;}
+      #qrc{margin-bottom:24px;}
+    </style>
+  </head><body>
+    <h2>${nombre}</h2>
+    <div id="qrc"></div>
+    <script>new QRCode(document.getElementById("qrc"),{text:"${qrUrl}",width:300,height:300,colorDark:"#000000",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.H});<\/script>
+  </body></html>`);
+}
+
+function renderQR(text, containerId, size) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = "";
+  new QRCode(el, {
+    text: text,
+    width: size,
+    height: size,
+    colorDark: "#000000",
+    colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.M
+  });
+}
+
+async function compartirQR() {
+  const url   = document.getElementById("qr-link")?.textContent?.trim() || "";
+  const nombre = document.getElementById("qr-nombre")?.textContent?.trim() || "Invitado";
+
+  if (!url) { alert("Genera una invitación primero"); return; }
+
+  // Link para mostrar QR al guardia (fondo blanco, escaneable)
+  const qrLink = url.replace("/qr.html?", "/qr-show.html?");
+  const texto = `🔐 Invitación de acceso para *${nombre}*
+
+Muestra este QR al guardia al llegar:
+${qrLink}`;
+
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: "Invitación PortoQR", text: texto, url: qrLink });
+      return;
+    } catch(e) {}
+  }
+
+  const waUrl = "https://wa.me/?text=" + encodeURIComponent(texto);
+  window.open(waUrl, "_blank");
+}
+
+function resetForm() {
+  ["f-nombre","f-tel","f-empresa","f-placa","f-modelo","f-color"].forEach(id => {
+    document.getElementById(id).value = "";
+  });
+  document.getElementById("qr-result").style.display = "none";
+  document.getElementById("form-alert").innerHTML = "";
+  selTipo("visita");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// ── MIS INVITACIONES ─────────────────────────────────────────────
+async function loadMisInvitaciones() {
+  try {
+    invitaciones = await sbGet("invitaciones",
+      `&residente_id=eq.${currentUser.id}&order=created_at.desc`
+    );
+    const activas = invitaciones.filter(i => i.estado === "activo");
+    const perms   = invitaciones.filter(i => i.tipo === "permanente" && i.estado === "activo");
+    document.getElementById("st-activas").textContent = activas.length;
+    document.getElementById("st-total").textContent   = invitaciones.length;
+    document.getElementById("st-perm").textContent    = perms.length;
+
+    renderInvList("inv-activas-list", activas, true);
+    renderInvList("inv-pasadas-list", invitaciones.filter(i => i.estado !== "activo").slice(0,10), false);
+  } catch(e) {
+    document.getElementById("inv-activas-list").innerHTML = '<div class="empty">Error al cargar</div>';
+  }
+}
+
+function renderInvList(elId, lista, showActions) {
+  if (!lista.length) {
+    document.getElementById(elId).innerHTML = '<div class="empty">Sin invitaciones</div>'; return;
+  }
+  document.getElementById(elId).innerHTML = `<div class="inv-list">` +
+    lista.map(inv => {
+      const exp = inv.expira_en
+        ? "Expira: " + new Date(inv.expira_en).toLocaleString("es-MX", { dateStyle:"short", timeStyle:"short" })
+        : "Sin expiración";
+      const dot = inv.estado === "activo" ? "var(--green)" : inv.estado === "cancelado" ? "var(--red)" : "var(--text3)";
+      return `<div class="inv-item">
+        <div style="width:10px;height:10px;border-radius:50%;background:${dot};flex-shrink:0;margin-top:5px"></div>
+        <div class="inv-info">
+          <div class="inv-nombre">${inv.nombre_visitante}</div>
+          <div class="inv-detail">
+            ${inv.placa ? inv.placa + " · " : ""}
+            ${inv.empresa || inv.motivo || ""}
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+            <span class="badge badge-${inv.estado}">${inv.estado}</span>
+            <span class="badge badge-${inv.tipo}">${inv.tipo}</span>
+            <span style="font-size:10px;color:var(--text3);font-family:'Poppins',sans-serif;margin-top:2px">${exp}</span>
+          </div>
+          ${showActions ? `<div class="inv-actions">
+            <button class="btn btn-ghost btn-sm" onclick="verQR('${location.origin}/qr.html?code=${inv.codigo_qr}','${inv.nombre_visitante}')">Ver QR</button>
+            <button class="btn btn-ghost btn-sm" onclick="reenviarQR('${inv.codigo_qr}','${inv.nombre_visitante}')">📤 Reenviar</button>
+            <button class="btn btn-red btn-sm" onclick="cancelarInv('${inv.id}')">Cancelar</button>
+          </div>` : ""}
+        </div>
+      </div>`;
+    }).join("") + `</div>`;
+}
+
+function verQR(codigo, nombre) {
+  const w = window.open("", "_blank", "width=400,height=520");
+  w.document.write(`<!DOCTYPE html><html><head>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
+    <style>*{margin:0;padding:0;}body{background:#ffffff;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:'Poppins',sans-serif;padding:32px;}h2{font-size:18px;font-weight:700;margin-bottom:20px;text-align:center;color:#000;}#qrc{margin-bottom:16px;}</style>
+  </head><body>
+    <h2>${nombre}</h2>
+    <div id="qrc"></div>
+    <script>new QRCode(document.getElementById('qrc'),{text:'${codigo}',width:280,height:280,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});<\/script>
+  </body></html>`);
+}
+
+async function reenviarQR(codigo, nombre) {
+  const qrLink = `https://portoqr.netlify.app/qr-show.html?code=${codigo}`;
+  const texto  = `🔐 Invitación de acceso para *${nombre}*
+
+Muestra este QR al guardia al llegar:
+${qrLink}`;
+
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: "Invitación PortoQR", text: texto, url: qrLink });
+      return;
+    } catch(e) {}
+  }
+  window.open("https://wa.me/?text=" + encodeURIComponent(texto), "_blank");
+}
+
+async function cancelarInv(id) {
+  if (!confirm("¿Cancelar esta invitación?")) return;
+  try {
+    await sbUpdate("invitaciones", id, { estado: "cancelado" });
+    loadMisInvitaciones();
+  } catch(e) { alert("Error: " + e.message); }
+}
+
+// ── HISTORIAL ─────────────────────────────────────────────────────
+async function loadHistorial() {
+  try {
+    // Obtener IDs de mis invitaciones
+    const mis = await sbGet("invitaciones", `&residente_id=eq.${currentUser.id}&select=id`);
+    if (!mis.length) {
+      document.getElementById("historial-list").innerHTML = '<div class="empty">Sin visitas registradas</div>';
+      return;
+    }
+    const ids = mis.map(i => i.id);
+    const accesos = await sbGet("accesos",
+      `&invitacion_id=in.(${ids.join(",")})&order=created_at.desc&limit=50`
+    );
+    if (!accesos.length) {
+      document.getElementById("historial-list").innerHTML = '<div class="empty">Sin accesos aún</div>';
+      return;
+    }
+    document.getElementById("historial-list").innerHTML = `<div class="inv-list">` +
+      accesos.map(a => {
+        const t = new Date(a.created_at).toLocaleString("es-MX",{dateStyle:"short",timeStyle:"short"});
+        const col = a.tipo === "entrada" ? "var(--green)" : a.resultado === "denegado" ? "var(--red)" : "var(--amber)";
+        return `<div class="inv-item">
+          <div style="width:10px;height:10px;border-radius:50%;background:${col};flex-shrink:0;margin-top:5px"></div>
+          <div class="inv-info">
+            <div class="inv-nombre">${a.nombre_visitante || "—"}</div>
+            <div class="inv-detail">${a.placa || ""}</div>
+            <div style="margin-top:6px;display:flex;gap:6px;align-items:center">
+              <span class="badge badge-${a.resultado === "denegado" ? "cancelado" : a.tipo === "entrada" ? "activo" : "urgente"}">${a.tipo.toUpperCase()}</span>
+              <span style="font-size:10px;color:var(--text3);font-family:'Poppins',sans-serif">${t}</span>
+            </div>
+          </div>
+        </div>`;
+      }).join("") + `</div>`;
+  } catch(e) {
+    document.getElementById("historial-list").innerHTML = '<div class="empty">Error al cargar</div>';
+  }
+}
+
+function showAlert(type, msg) {
+  const el = document.getElementById("form-alert");
+  el.innerHTML = `<div class="alert alert-${type === "ok" ? "ok" : "err"}">${msg}</div>`;
+  if (type === "ok") setTimeout(() => el.innerHTML = "", 4000);
+}
+
+function logout() {
+  sessionStorage.removeItem("aqr_user");
+  window.location.href = "app.html";
+}
+
+// ── CAMBIAR CONTRASEÑA ────────────────────────────────────────
+function openCambiarPass() {
+  document.getElementById("mo-pass").style.display = "flex";
+  document.getElementById("cp-actual").value = "";
+  document.getElementById("cp-nueva").value = "";
+  document.getElementById("cp-confirma").value = "";
+  document.getElementById("cp-err").textContent = "";
+}
+function closeCambiarPass() {
+  document.getElementById("mo-pass").style.display = "none";
+}
+async function guardarNuevaPass() {
+  const actual   = document.getElementById("cp-actual").value;
+  const nueva    = document.getElementById("cp-nueva").value;
+  const confirma = document.getElementById("cp-confirma").value;
+  const errEl    = document.getElementById("cp-err");
+  errEl.textContent = "";
+
+  if (!actual || !nueva || !confirma) { errEl.textContent = "Completa todos los campos"; return; }
+  if (nueva.length < 8) { errEl.textContent = "La nueva contraseña debe tener mínimo 8 caracteres"; return; }
+  if (nueva !== confirma) { errEl.textContent = "Las contraseñas no coinciden"; return; }
+
+  const hashActual = await sha256(actual);
+  const user = await sbGet("usuarios", `&id=eq.${currentUser.id}&password_hash=eq.${hashActual}`);
+  if (!user.length) { errEl.textContent = "La contraseña actual es incorrecta"; return; }
+
+  const hashNueva = await sha256(nueva);
+  await sbUpdate("usuarios", currentUser.id, { password_hash: hashNueva });
+  closeCambiarPass();
+  showAlert("ok", "✅ Contraseña actualizada correctamente");
+}
+</script>
+
+<!-- MODAL CAMBIAR CONTRASEÑA -->
+<div id="mo-pass" style="position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:500;align-items:center;justify-content:center;padding:20px;display:none;">
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:28px;width:100%;max-width:400px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <div style="font-size:17px;font-weight:800;">🔑 Cambiar contraseña</div>
+      <button onclick="closeCambiarPass()" style="background:none;border:none;color:var(--text3);font-size:22px;cursor:pointer;">✕</button>
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:10px;color:var(--text3);letter-spacing:.14em;text-transform:uppercase;margin-bottom:7px;">Contraseña actual</label>
+      <input type="password" id="cp-actual" placeholder="••••••••" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--text);font-family:'Poppins',sans-serif;font-size:14px;outline:none;">
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:10px;color:var(--text3);letter-spacing:.14em;text-transform:uppercase;margin-bottom:7px;">Nueva contraseña</label>
+      <input type="password" id="cp-nueva" placeholder="Mínimo 8 caracteres" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--text);font-family:'Poppins',sans-serif;font-size:14px;outline:none;">
+    </div>
+    <div style="margin-bottom:8px;">
+      <label style="display:block;font-size:10px;color:var(--text3);letter-spacing:.14em;text-transform:uppercase;margin-bottom:7px;">Confirmar nueva contraseña</label>
+      <input type="password" id="cp-confirma" placeholder="••••••••" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--text);font-family:'Poppins',sans-serif;font-size:14px;outline:none;">
+    </div>
+    <div id="cp-err" style="font-size:12px;color:var(--red);margin-bottom:12px;min-height:16px;"></div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="closeCambiarPass()" style="flex:1;padding:12px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text2);font-family:'Poppins',sans-serif;font-size:13px;cursor:pointer;">Cancelar</button>
+      <button onclick="guardarNuevaPass()" style="flex:2;padding:12px;background:var(--green);border:none;border-radius:8px;color:var(--bg);font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

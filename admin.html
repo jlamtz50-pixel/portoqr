@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PortoQR — Administrador</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#080c0a;--bg2:#0d1210;--surface:#111816;--surface2:#141c19;--border:#1e2b27;--border2:#2a3d38;--green:#00e676;--green-bg:rgba(0,230,118,.08);--red:#ff1744;--red-bg:rgba(255,23,68,.08);--amber:#ffab00;--amber-bg:rgba(255,171,0,.08);--blue:#40c4ff;--blue-bg:rgba(64,196,255,.08);--purple:#ce93d8;--purple-bg:rgba(206,147,216,.08);--text:#e8f5e9;--text2:#78909c;--text3:#37474f;--mono:'Poppins',sans-serif;--r:12px;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(rgba(0,230,118,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,230,118,.025) 1px,transparent 1px);background-size:48px 48px;}
+.sidebar{position:fixed;top:0;left:0;width:230px;height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;overflow-y:auto;}
+.sidebar-head{padding:22px 20px 16px;border-bottom:1px solid var(--border);}
+.sidebar-logo{font-family:'Poppins',sans-serif;font-size:16px;font-weight:700;}
+.sidebar-logo span{color:var(--green);}
+.s-badge{display:inline-block;margin-top:5px;border-radius:4px;font-size:9px;padding:2px 8px;font-family:'Poppins',sans-serif;letter-spacing:.12em;text-transform:uppercase;}
+.s-badge-sa{background:var(--purple-bg);color:var(--purple);border:1px solid rgba(206,147,216,.25);}
+.s-badge-a{background:var(--green-bg);color:var(--green);border:1px solid rgba(0,230,118,.25);}
+.nav{padding:12px 10px;flex:1;}
+.nav-sec{font-size:9px;color:var(--text3);font-family:'Poppins',sans-serif;letter-spacing:.18em;text-transform:uppercase;padding:10px 12px 5px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text2);transition:.15s;margin-bottom:1px;border:none;background:none;width:100%;text-align:left;}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.active{background:var(--green-bg);color:var(--green);}
+.nav-icon{font-size:15px;width:18px;text-align:center;flex-shrink:0;}
+.only-super{display:none;}
+.sidebar-foot{padding:14px;border-top:1px solid var(--border);}
+.s-user{font-size:11px;color:var(--text3);font-family:'Poppins',sans-serif;margin-bottom:3px;}
+.s-role{font-size:10px;color:var(--text3);font-family:'Poppins',sans-serif;margin-bottom:8px;}
+.btn-logout{width:100%;padding:8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-family:'Poppins',sans-serif;font-size:12px;cursor:pointer;transition:.15s;font-weight:600;}
+.btn-logout:hover{border-color:var(--red);color:var(--red);}
+.main{margin-left:230px;padding:32px;min-height:100vh;}
+.page{display:none;} .page.active{display:block;}
+.ph{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;flex-wrap:wrap;gap:12px;}
+.pt{font-size:22px;font-weight:800;letter-spacing:-.02em;} .pt span{color:var(--green);}
+.sr{display:grid;gap:12px;margin-bottom:20px;}
+.c4{grid-template-columns:repeat(4,1fr);} .c3{grid-template-columns:repeat(3,1fr);} .c2{grid-template-columns:1fr 1fr;}
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;}
+.sl{font-size:10px;color:var(--text3);letter-spacing:.15em;text-transform:uppercase;font-family:'Poppins',sans-serif;margin-bottom:8px;}
+.sv{font-size:30px;font-weight:800;line-height:1;letter-spacing:-.03em;}
+.mrr{background:linear-gradient(135deg,rgba(0,230,118,.08),rgba(0,230,118,.02));border-color:rgba(0,230,118,.2);}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:14px;}
+.ch{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+.ct{font-size:13px;font-weight:700;color:var(--text2);}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+table{width:100%;border-collapse:collapse;}
+th{text-align:left;padding:8px 12px;font-size:10px;color:var(--text3);letter-spacing:.14em;text-transform:uppercase;font-family:'Poppins',sans-serif;font-weight:500;border-bottom:1px solid var(--border);}
+td{padding:12px;font-size:13px;border-bottom:1px solid rgba(30,43,39,.8);vertical-align:middle;}
+tr:last-child td{border-bottom:none;} tr:hover td{background:rgba(255,255,255,.012);}
+.tw{overflow-x:auto;}
+.badge{display:inline-block;border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;font-family:'Poppins',sans-serif;}
+.b-activo{background:var(--green-bg);color:var(--green);border:1px solid rgba(0,230,118,.3);}
+.b-prueba{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(255,171,0,.3);}
+.b-suspendido,.b-inactivo{background:var(--red-bg);color:var(--red);border:1px solid rgba(255,23,68,.3);}
+.b-superadmin{background:var(--purple-bg);color:var(--purple);border:1px solid rgba(206,147,216,.3);}
+.b-admin{background:var(--blue-bg);color:var(--blue);border:1px solid rgba(64,196,255,.3);}
+.b-residente{background:var(--green-bg);color:var(--green);border:1px solid rgba(0,230,118,.3);}
+.b-guardia{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(255,171,0,.3);}
+.b-basico{background:rgba(90,90,90,.12);color:var(--text2);border:1px solid var(--border2);}
+.b-estandar{background:var(--blue-bg);color:var(--blue);border:1px solid rgba(64,196,255,.3);}
+.b-premium{background:var(--purple-bg);color:var(--purple);border:1px solid rgba(206,147,216,.3);}
+.btn{padding:8px 16px;border-radius:7px;font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;cursor:pointer;border:none;transition:.15s;}
+.btn-p{background:var(--green);color:var(--bg);} .btn-p:hover{background:#69f0ae;}
+.btn-g{background:transparent;color:var(--text2);border:1px solid var(--border);}
+.btn-g:hover{border-color:var(--green);color:var(--green);}
+.btn-r{background:var(--red-bg);color:var(--red);border:1px solid rgba(255,23,68,.3);}
+.btn-r:hover{background:rgba(255,23,68,.15);}
+.btn-a{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(255,171,0,.3);}
+.bsm{padding:5px 10px;font-size:11px;}
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .2s;}
+.mo.open{opacity:1;pointer-events:all;}
+.md{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:28px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto;transform:translateY(14px);transition:transform .2s;}
+.mo.open .md{transform:translateY(0);}
+.mh{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+.mt{font-size:17px;font-weight:800;letter-spacing:-.02em;}
+.mx{background:none;border:none;color:var(--text3);cursor:pointer;font-size:22px;line-height:1;}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.fi{display:flex;flex-direction:column;gap:6px;}
+.fi label{font-size:10px;color:var(--text3);font-family:'Poppins',sans-serif;letter-spacing:.14em;text-transform:uppercase;display:flex;align-items:center;gap:4px;}
+.req{color:var(--red);font-size:13px;line-height:1;}
+.fi input,.fi select,.fi textarea{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:11px 13px;color:var(--text);font-family:'Poppins',sans-serif;font-size:13px;outline:none;transition:.2s;}
+.fi input:focus,.fi select:focus,.fi textarea:focus{border-color:var(--green);}
+.fi input.ef,.fi select.ef{border-color:var(--red)!important;}
+.fi select option{background:var(--bg2);}
+.ff{grid-column:1/-1;}
+.ferr{font-size:10px;color:var(--red);font-family:'Poppins',sans-serif;display:none;}
+.ferr.show{display:block;}
+.fa{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;}
+.al{padding:12px 16px;border-radius:8px;font-size:12px;font-family:'Poppins',sans-serif;margin-top:12px;}
+.al-ok{background:var(--green-bg);border:1px solid rgba(0,230,118,.3);color:var(--green);}
+.al-err{background:var(--red-bg);border:1px solid rgba(255,23,68,.3);color:var(--red);}
+#ga{margin-bottom:16px;display:none;}
+.empty{text-align:center;padding:40px;color:var(--text3);font-family:'Poppins',sans-serif;font-size:12px;}
+.loading{text-align:center;padding:40px;color:var(--text3);font-family:'Poppins',sans-serif;font-size:12px;}
+.mr{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(30,43,39,.8);}
+.mr:last-child{border-bottom:none;}
+.mn{font-size:13px;font-weight:600;}
+.ms{font-size:11px;color:var(--text3);font-family:'Poppins',sans-serif;margin-top:2px;}
+.ld{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;margin-right:6px;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,230,118,.4);}50%{opacity:.7;box-shadow:0 0 0 5px rgba(0,230,118,0);}}
+.warn{color:var(--amber);} .danger{color:var(--red);}
+/* ── Hamburger button ── */
+.btn-ham{display:none;position:fixed;top:14px;left:14px;z-index:300;background:var(--surface);border:1px solid var(--border);border-radius:8px;width:40px;height:40px;cursor:pointer;flex-direction:column;align-items:center;justify-content:center;gap:5px;}
+.btn-ham span{display:block;width:18px;height:2px;background:var(--text);border-radius:2px;transition:.2s;}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:150;backdrop-filter:blur(2px);}
+.sidebar-overlay.open{display:block;}
+
+@media(max-width:900px){
+  .btn-ham{display:flex;}
+  .sidebar{position:fixed;top:0;left:0;height:100vh;width:260px;transform:translateX(-100%);transition:transform .25s cubic-bezier(.4,0,.2,1);z-index:200;}
+  .sidebar.open{transform:translateX(0);}
+  .main{margin-left:0;padding:16px;padding-top:64px;}
+  .sr.c4{grid-template-columns:1fr 1fr;}
+  .sr.c3{grid-template-columns:1fr 1fr;}
+  .g2,.fg{grid-template-columns:1fr;}
+  .ph{margin-bottom:16px;}
+  .pt{font-size:18px;}
+  table{font-size:12px;}
+  th,td{padding:8px 10px;}
+  .md{padding:20px 16px;}
+}
+@media(max-width:480px){
+  .sr.c4,.sr.c3{grid-template-columns:1fr;}
+  .fa{flex-direction:column;}
+  .fa .btn{width:100%;}
+}
+</style>
+</head>
+<body>
+<button class="btn-ham" id="btn-ham" onclick="toggleSidebar()" aria-label="Menú">
+  <span></span><span></span><span></span>
+</button>
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-head">
+    <div class="sidebar-logo">Porto<span>QR</span></div>
+    <div class="s-badge s-badge-a" id="sb-badge">Admin</div>
+  </div>
+  <nav class="nav">
+    <div class="nav-sec">General</div>
+    <button class="nav-item active" onclick="showPage('dashboard')"><span class="nav-icon">⬡</span>Dashboard</button>
+    <div class="nav-sec only-super">SaaS</div>
+    <button class="nav-item only-super" onclick="showPage('licencias')"><span class="nav-icon">💳</span>Licencias</button>
+    <div class="nav-sec">Gestión</div>
+    <button class="nav-item" onclick="showPage('propiedades')"><span class="nav-icon">🏢</span>Propiedades</button>
+    <button class="nav-item" onclick="showPage('usuarios')"><span class="nav-icon">👥</span>Usuarios</button>
+    <button class="nav-item" onclick="showPage('invitaciones')"><span class="nav-icon">🎫</span>Invitaciones</button>
+    <div class="nav-sec">Monitoreo</div>
+    <button class="nav-item" onclick="showPage('accesos')"><span class="nav-icon">📋</span>Bitácora</button>
+  </nav>
+  <div class="sidebar-foot">
+    <div class="s-user" id="sb-user">—</div>
+    <div class="s-role" id="sb-role">—</div>
+    <button class="btn-logout" onclick="logout()">← Cerrar sesión</button>
+  </div>
+</div>
+
+<main class="main">
+  <div id="ga"></div>
+
+  <!-- DASHBOARD -->
+  <div id="page-dashboard" class="page active">
+    <div class="ph"><div class="pt">Dashboard <span id="ds-sub">PortoQR</span></div><button class="btn btn-g" onclick="loadAll()">↻ Actualizar</button></div>
+    <div id="ss-row" style="display:none">
+      <div class="sr c4">
+        <div class="sc mrr"><div class="sl">MRR PortoQR</div><div class="sv" style="color:var(--green)" id="d-mrr">—</div></div>
+        <div class="sc"><div class="sl">Clientes Activos</div><div class="sv" style="color:var(--green)" id="d-lact">—</div></div>
+        <div class="sc"><div class="sl">En Prueba</div><div class="sv" style="color:var(--amber)" id="d-lpru">—</div></div>
+        <div class="sc"><div class="sl">Por Vencer</div><div class="sv" style="color:var(--red)" id="d-lven">—</div></div>
+      </div>
+    </div>
+    <div class="sr c4">
+      <div class="sc"><div class="sl">Propiedades</div><div class="sv" id="d-props">—</div></div>
+      <div class="sc"><div class="sl">Usuarios</div><div class="sv" id="d-users">—</div></div>
+      <div class="sc"><div class="sl"><span class="ld"></span>Accesos hoy</div><div class="sv" style="color:var(--green)" id="d-hoy">—</div></div>
+      <div class="sc"><div class="sl">Invit. Activas</div><div class="sv" style="color:var(--amber)" id="d-invs">—</div></div>
+    </div>
+    <div class="g2">
+      <div class="card"><div class="ch"><div class="ct">🚪 Últimos accesos</div><button class="btn btn-g bsm" onclick="showPage('accesos')">Ver todos →</button></div><div id="d-acc"><div class="loading">Cargando...</div></div></div>
+      <div class="card"><div class="ch"><div class="ct" id="d-c2t">👥 Usuarios recientes</div></div><div id="d-c2"><div class="loading">Cargando...</div></div></div>
+    </div>
+  </div>
+
+  <!-- LICENCIAS -->
+  <div id="page-licencias" class="page">
+    <div class="ph"><div class="pt"><span>Licencias</span> PortoQR</div><button class="btn btn-p" onclick="openLicModal()">+ Nueva Licencia</button></div>
+    <div class="sr c3"><div class="sc mrr"><div class="sl">MRR</div><div class="sv" style="color:var(--green)" id="l-mrr">—</div></div><div class="sc"><div class="sl">Activos</div><div class="sv" style="color:var(--green)" id="l-act">—</div></div><div class="sc"><div class="sl">Por Vencer (7d)</div><div class="sv" style="color:var(--red)" id="l-ven">—</div></div></div>
+    <div class="card"><div class="tw" id="t-lic"><div class="loading">Cargando...</div></div></div>
+  </div>
+
+  <!-- PROPIEDADES -->
+  <div id="page-propiedades" class="page">
+    <div class="ph"><div class="pt"><span>Propiedades</span></div><button class="btn btn-p only-super" id="btn-nueva-prop" onclick="openPropModal()">+ Nueva Propiedad</button></div>
+    <div class="card"><div class="tw" id="t-props"><div class="loading">Cargando...</div></div></div>
+  </div>
+
+  <!-- USUARIOS -->
+  <div id="page-usuarios" class="page">
+    <div class="ph"><div class="pt"><span>Usuarios</span></div><button class="btn btn-p" onclick="openUserModal()">+ Nuevo Usuario</button></div>
+    <div class="sr c3"><div class="sc"><div class="sl">Admins</div><div class="sv" style="color:var(--blue)" id="u-na">—</div></div><div class="sc"><div class="sl">Residentes</div><div class="sv" style="color:var(--green)" id="u-nr">—</div></div><div class="sc"><div class="sl">Guardias</div><div class="sv" style="color:var(--amber)" id="u-ng">—</div></div></div>
+    <div class="card"><div class="tw" id="t-users"><div class="loading">Cargando...</div></div></div>
+  </div>
+
+  <!-- INVITACIONES -->
+  <div id="page-invitaciones" class="page">
+    <div class="ph"><div class="pt"><span>Invitaciones</span></div><button class="btn btn-g" onclick="loadInvs()">↻ Actualizar</button></div>
+    <div class="card">
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        <select id="if-est" onchange="renderInvs()" style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none"><option value="">Todos</option><option value="activo">Activas</option><option value="usado">Usadas</option><option value="expirado">Expiradas</option><option value="cancelado">Canceladas</option></select>
+        <select id="if-tip" onchange="renderInvs()" style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none"><option value="">Todos</option><option value="visita">Visita</option><option value="permanente">Permanente</option><option value="urgente">Urgente</option></select>
+      </div>
+      <div class="tw" id="t-invs"><div class="loading">Cargando...</div></div>
+    </div>
+  </div>
+
+  <!-- BITÁCORA -->
+  <div id="page-accesos" class="page">
+    <div class="ph"><div class="pt"><span>Bitácora</span></div><button class="btn btn-g" onclick="loadAcc()">↻ Actualizar</button></div>
+    <div class="sr c3"><div class="sc"><div class="sl"><span class="ld"></span>Entradas</div><div class="sv" style="color:var(--green)" id="a-e">—</div></div><div class="sc"><div class="sl">Salidas</div><div class="sv" style="color:var(--amber)" id="a-s">—</div></div><div class="sc"><div class="sl">Denegados</div><div class="sv" style="color:var(--red)" id="a-d">—</div></div></div>
+    <div class="card"><div class="tw" id="t-acc"><div class="loading">Cargando...</div></div></div>
+  </div>
+</main>
+
+<!-- MODAL LICENCIA -->
+<div class="mo" id="mo-lic">
+  <div class="md">
+    <div class="mh"><div class="mt" id="ml-t">Nueva Licencia</div><button class="mx" onclick="closeModal('mo-lic')">×</button></div>
+    <div class="fg">
+      <div class="fi ff"><label>Nombre del negocio / propiedad <span class="req">*</span></label><input type="text" id="l-nom" placeholder="Residencial Las Palmas"/><div class="ferr" id="el-nom">Campo obligatorio</div></div>
+      <div class="fi"><label>Contacto (Pres. HOA) <span class="req">*</span></label><input type="text" id="l-con" placeholder="Juan Pérez"/><div class="ferr" id="el-con">Campo obligatorio</div></div>
+      <div class="fi"><label>Email <span class="req">*</span></label><input type="email" id="l-ema" placeholder="contacto@ejemplo.com"/><div class="ferr" id="el-ema">Email inválido</div></div>
+      <div class="fi"><label>Teléfono</label><input type="tel" id="l-tel" placeholder="81 1234 5678"/></div>
+      <div class="fi ff"><label>Dirección completa</label><input type="text" id="l-dir" placeholder="Av. Principal 100, Col. Centro, Monterrey NL"/></div>
+      <div class="fi"><label>Plan <span class="req">*</span></label><select id="l-pla"><option value="basico">Básico — $299/mes</option><option value="estandar" selected>Estándar — $599/mes</option><option value="premium">Premium — $999/mes</option></select></div>
+      <div class="fi"><label>Estado</label><select id="l-est"><option value="prueba">En Prueba</option><option value="activo">Activo</option><option value="suspendido">Suspendido</option></select></div>
+      <div class="fi"><label>Fecha inicio</label><input type="date" id="l-ini"/></div>
+      <div class="fi"><label>Fecha vencimiento <span class="req">*</span></label><input type="date" id="l-ven"/><div class="ferr" id="el-ven">Fecha requerida</div></div>
+      <div class="fi ff"><label>Propiedad vinculada</label><select id="l-pro"><option value="">Sin vincular aún</option></select></div>
+      <div class="fi ff"><label>Notas</label><textarea id="l-not" rows="2" placeholder="Acuerdos especiales..."></textarea></div>
+    </div>
+    <div id="al-lic"></div>
+    <div class="fa">
+      <button class="btn btn-p" onclick="saveLic()" id="lb-save">✓ Guardar</button>
+      <button class="btn btn-g" onclick="closeModal('mo-lic')">Cancelar</button>
+      <button class="btn btn-r bsm" id="lb-del" style="display:none;margin-left:auto" onclick="deleteLic()">🗑 Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PROPIEDAD -->
+<div class="mo" id="mo-prop">
+  <div class="md">
+    <div class="mh"><div class="mt">Nueva Propiedad</div><button class="mx" onclick="closeModal('mo-prop')">×</button></div>
+    <div class="fg">
+      <div class="fi ff"><label>Nombre <span class="req">*</span></label><input type="text" id="p-nom" placeholder="Residencial Las Palmas"/><div class="ferr" id="ep-nom">El nombre es obligatorio</div></div>
+      <div class="fi"><label>Tipo <span class="req">*</span></label><select id="p-tip"><option value="">Selecciona...</option><option value="colonia">Colonia / Fraccionamiento</option><option value="edificio">Edificio / Torre</option><option value="parque_industrial">Parque Industrial</option><option value="condominio">Condominio</option><option value="otro">Otro</option></select><div class="ferr" id="ep-tip">Selecciona el tipo</div></div>
+      <div class="fi"><label>Ciudad</label><input type="text" id="p-ciu" placeholder="Monterrey, NL"/></div>
+      <div class="fi ff"><label>Dirección completa</label><input type="text" id="p-dir" placeholder="Av. Principal 100, Col. Centro, CP 64000"/></div>
+    </div>
+    <div id="al-prop"></div>
+    <div class="fa"><button class="btn btn-p" onclick="saveProp()">✓ Guardar Propiedad</button><button class="btn btn-g" onclick="closeModal('mo-prop')">Cancelar</button></div>
+  </div>
+</div>
+
+<!-- MODAL USUARIO -->
+<div class="mo" id="mo-user">
+  <div class="md">
+    <div class="mh"><div class="mt" id="mu-t">Nuevo Usuario</div><button class="mx" onclick="closeModal('mo-user')">×</button></div>
+    <div class="fg">
+      <div class="fi ff"><label>Nombre completo <span class="req">*</span></label><input type="text" id="u-nom" placeholder="Juan Pérez"/><div class="ferr" id="eu-nom">Nombre obligatorio</div></div>
+      <div class="fi"><label>Email <span class="req">*</span></label><input type="email" id="u-ema" placeholder="correo@ejemplo.com"/><div class="ferr" id="eu-ema">Email inválido</div></div>
+      <div class="fi"><label>Teléfono</label><input type="tel" id="u-tel" placeholder="81 1234 5678"/></div>
+      <div class="fi"><label>Rol <span class="req">*</span></label><select id="u-rol" onchange="onRolChange()"><option value="">Selecciona...</option><option value="admin">Admin de Propiedad</option><option value="residente">Residente</option><option value="guardia">Guardia</option></select><div class="ferr" id="eu-rol">Selecciona el rol</div></div>
+      <div class="fi"><label>Propiedad <span class="req">*</span></label><select id="u-pro"><option value="">Selecciona...</option></select><div class="ferr" id="eu-pro">Selecciona la propiedad</div></div>
+      <div class="fi ff" id="fi-dir" style="display:none"><label>Dirección dentro de la propiedad</label><input type="text" id="u-dir" placeholder="Casa 12, Calle Roble — frente al parque"/></div>
+      <div class="fi ff"><label>Contraseña <span class="req" id="pass-req">*</span></label><input type="password" id="u-pas" placeholder="Mínimo 8 caracteres"/><div class="ferr" id="eu-pas">Mínimo 8 caracteres</div></div>
+    </div>
+    <div id="al-user"></div>
+    <div class="fa">
+      <button class="btn btn-p" onclick="saveUser()" id="ub-save">✓ Crear Usuario</button>
+      <button class="btn btn-g" onclick="closeModal('mo-user')">Cancelar</button>
+      <button class="btn btn-r bsm" id="ub-del" style="display:none;margin-left:auto" onclick="deleteUser()">🗑 Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB="https://ghgwegvvawhgzmzjspkl.supabase.co";
+const SK="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdoZ3dlZ3Z2YXdoZ3ptempzcGtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1ODQ3ODAsImV4cCI6MjA4ODE2MDc4MH0.cbR9QXTWqD4XEdPSj1tz7Mzd9MuAg4VmK5T4es4AKP8";
+const RESEND_KEY = "re_gXKmQrKb_GSdJoE3xKdHMaVpPsoJHJ4xm";
+const FROM_EMAIL = "contacto@foodrestco.com";
+const PR={basico:299,estandar:599,premium:999};
+let cu=null,isSA=false,props=[],users=[],invList=[],lics=[];
+let licEid=null,userEid=null;
+
+// ── ENVIAR EMAIL BIENVENIDA ──────────────────────────────────
+async function sendWelcomeEmail(nombre, email, password, rol, propiedad) {
+  const rolLabel = rol === 'residente' ? 'Residente' : 'Guardia';
+  const appUrl = 'https://portoqr.netlify.app/app.html';
+  const html = `
+    <div style="font-family:'Poppins',Arial,sans-serif;background:#080c0a;color:#e8f5e9;max-width:560px;margin:0 auto;border-radius:16px;overflow:hidden;border:1px solid #1e2b27;">
+      <div style="background:#0f1612;padding:32px 36px;border-bottom:1px solid #1e2b27;">
+        <div style="font-size:22px;font-weight:800;letter-spacing:-.02em;">Porto<span style="color:#00e676;">QR</span></div>
+        <div style="font-size:11px;color:#37474f;letter-spacing:.15em;text-transform:uppercase;margin-top:4px;">Sistema de Control de Acceso</div>
+      </div>
+      <div style="padding:36px;">
+        <div style="font-size:13px;color:#00e676;letter-spacing:.15em;text-transform:uppercase;margin-bottom:12px;">Bienvenido a PortoQR</div>
+        <h2 style="font-size:24px;font-weight:800;margin:0 0 8px;letter-spacing:-.02em;">Hola, ${nombre} 👋</h2>
+        <p style="color:#78909c;font-size:14px;line-height:1.7;margin:0 0 28px;">Tu cuenta ha sido creada en <strong style="color:#e8f5e9;">${propiedad}</strong> con el rol de <strong style="color:#00e676;">${rolLabel}</strong>. Aquí están tus credenciales de acceso:</p>
+        <div style="background:#0f1612;border:1px solid #1e2b27;border-radius:12px;padding:24px;margin-bottom:28px;">
+          <div style="margin-bottom:16px;">
+            <div style="font-size:10px;color:#37474f;letter-spacing:.15em;text-transform:uppercase;margin-bottom:6px;">Correo electrónico</div>
+            <div style="font-size:15px;font-weight:600;color:#e8f5e9;">${email}</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:#37474f;letter-spacing:.15em;text-transform:uppercase;margin-bottom:6px;">Contraseña provisional</div>
+            <div style="font-size:18px;font-weight:800;color:#00e676;letter-spacing:.05em;font-family:monospace;">${password}</div>
+          </div>
+        </div>
+        <div style="background:rgba(255,171,0,.08);border:1px solid rgba(255,171,0,.2);border-radius:10px;padding:14px 18px;margin-bottom:28px;font-size:13px;color:#ffab00;">
+          ⚠️ Por seguridad, cambia tu contraseña después de iniciar sesión por primera vez.
+        </div>
+        <a href="${appUrl}" style="display:block;background:#00e676;color:#080c0a;text-align:center;padding:15px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none;letter-spacing:.05em;">Ingresar al sistema →</a>
+      </div>
+      <div style="padding:20px 36px;border-top:1px solid #1e2b27;font-size:11px;color:#37474f;text-align:center;">
+        © 2025 PortoQR · Desarrollado por AppNovaDev · <a href="https://portoqr.com" style="color:#37474f;">portoqr.com</a>
+      </div>
+    </div>`;
+
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${RESEND_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      from: `PortoQR <${FROM_EMAIL}>`,
+      to: [email],
+      subject: `Bienvenido a PortoQR — Tus credenciales de acceso`,
+      html
+    })
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    console.warn('Resend error:', err);
+    throw new Error(err.message || 'Error al enviar email');
+  }
+}
+
+(function(){
+  const s=sessionStorage.getItem("aqr_user");
+  if(!s){window.location.href="app.html";return;}
+  cu=JSON.parse(s);
+  if(!["admin","superadmin"].includes(cu.rol)){window.location.href="app.html";return;}
+  isSA=cu.rol==="superadmin";
+  st("sb-user",cu.nombre);
+  st("sb-role",isSA?"Super Administrador":"Admin de Propiedad");
+  const b=document.getElementById("sb-badge");
+  b.className=`s-badge ${isSA?"s-badge-sa":"s-badge-a"}`;
+  b.textContent=isSA?"Super Admin":"Administrador";
+  if(isSA){document.querySelectorAll(".only-super").forEach(e=>e.style.display="block");st("ds-sub","Central");document.getElementById("ss-row").style.display="block";}
+  else{const b=document.getElementById("btn-nueva-prop");if(b)b.style.display="none";}
+  loadAll();
+})();
+
+const H={apikey:SK,Authorization:"Bearer "+SK,"Content-Type":"application/json"};
+async function sbG(t,q=""){const r=await fetch(`${SB}/rest/v1/${t}?select=*${q}`,{headers:H});if(!r.ok)throw new Error(await r.text());return r.json();}
+async function sbP(t,d){const r=await fetch(`${SB}/rest/v1/${t}`,{method:"POST",headers:{...H,Prefer:"return=representation"},body:JSON.stringify(d)});if(!r.ok)throw new Error(await r.text());const res=await r.json();return Array.isArray(res)?res[0]:res;}
+async function sbU(t,id,d){const r=await fetch(`${SB}/rest/v1/${t}?id=eq.${id}`,{method:"PATCH",headers:{...H,Prefer:"return=representation"},body:JSON.stringify(d)});if(!r.ok)throw new Error(await r.text());}
+async function sbD(t,id){const r=await fetch(`${SB}/rest/v1/${t}?id=eq.${id}`,{method:"DELETE",headers:H});if(!r.ok)throw new Error(await r.text());}
+async function sha256(s){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join("");}
+
+function showPage(id){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll(".nav-item").forEach(n=>n.classList.remove("active"));
+  document.getElementById("page-"+id).classList.add("active");
+  document.querySelectorAll(".nav-item").forEach(n=>{if(n.getAttribute("onclick")?.includes(`'${id}'`))n.classList.add("active");});
+  closeSidebar();
+  ({licencias:loadLicencias,propiedades:loadPropiedades,usuarios:loadUsuarios,invitaciones:loadInvs,accesos:loadAcc})[id]?.();
+}
+
+async function loadAll(){await Promise.allSettled([loadPropsData(),loadUsersData(),loadDash()]);if(isSA)loadLicencias();}
+
+async function loadDash(){
+  try{
+    const pf=!isSA&&cu.propiedad_id?`&propiedad_id=eq.${cu.propiedad_id}`:"";
+    const hoy=new Date().toISOString().split("T")[0];
+    const[aH,iA]=await Promise.all([sbG("accesos",`${pf}&created_at=gte.${hoy}T00:00:00&order=created_at.desc&limit=8`),sbG("invitaciones",`${pf}&estado=eq.activo`)]);
+    st("d-props",props.filter(p=>isSA||p.id===cu.propiedad_id).length);
+    st("d-users",users.filter(u=>isSA||u.propiedad_id===cu.propiedad_id).length);
+    st("d-hoy",aH.length); st("d-invs",iA.length);
+    if(isSA){
+      lics=await sbG("licencias");
+      const act=lics.filter(l=>l.estado==="activo");
+      const en7=new Date();en7.setDate(en7.getDate()+7);
+      const ven=lics.filter(l=>l.fecha_vencimiento&&new Date(l.fecha_vencimiento)<=en7&&l.estado==="activo");
+      st("d-mrr",`$${act.reduce((a,l)=>a+(PR[l.plan]||0),0).toLocaleString("es-MX")}`);
+      st("d-lact",act.length); st("d-lpru",lics.filter(l=>l.estado==="prueba").length); st("d-lven",ven.length);
+      st("d-c2t","⚠️ Licencias por Vencer");
+      document.getElementById("d-c2").innerHTML=ven.length?ven.map(l=>`<div class="mr"><div><div class="mn">${e(l.nombre_negocio)}</div><div class="ms warn">Vence: ${fd(l.fecha_vencimiento)}</div></div><span class="badge b-${l.plan}">${l.plan}</span></div>`).join(""):'<div class="empty" style="padding:12px 0">✅ Sin vencimientos próximos</div>';
+    }else{
+      const mis=users.filter(u=>u.propiedad_id===cu.propiedad_id).slice(0,5);
+      document.getElementById("d-c2").innerHTML=mis.length?mis.map(u=>`<div class="mr"><div><div class="mn">${e(u.nombre)}</div><div class="ms">${u.email}</div></div><span class="badge b-${u.rol}">${u.rol}</span></div>`).join(""):'<div class="empty" style="padding:12px 0">Sin usuarios</div>';
+    }
+    document.getElementById("d-acc").innerHTML=aH.length?aH.map(a=>{const t=new Date(a.created_at).toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"});const c=a.resultado==="denegado"?"var(--red)":a.tipo==="entrada"?"var(--green)":"var(--amber)";return`<div class="mr"><div><div class="mn">${e(a.nombre_visitante||"—")}</div><div class="ms">${a.placa||""} · ${a.tipo.toUpperCase()}</div></div><span style="font-size:11px;color:${c};font-family:'Poppins',sans-serif">${t}</span></div>`;}).join(""):'<div class="empty" style="padding:12px 0">Sin accesos hoy</div>';
+  }catch(err){console.error(err);}
+}
+
+async function loadLicencias(){
+  try{
+    lics=await sbG("licencias","&order=created_at.desc");
+    const mrr=lics.filter(l=>l.estado==="activo").reduce((a,l)=>a+(PR[l.plan]||0),0);
+    const act=lics.filter(l=>l.estado==="activo").length;
+    const en7=new Date();en7.setDate(en7.getDate()+7);
+    const ven=lics.filter(l=>l.fecha_vencimiento&&new Date(l.fecha_vencimiento)<=en7&&l.estado==="activo").length;
+    st("l-mrr",`$${mrr.toLocaleString("es-MX")}`); st("l-act",act); st("l-ven",ven);
+    if(!lics.length){document.getElementById("t-lic").innerHTML='<div class="empty">Sin licencias. Crea la primera con "+ Nueva Licencia"</div>';return;}
+    document.getElementById("t-lic").innerHTML=`<table><thead><tr><th>Negocio</th><th>Contacto</th><th>Plan</th><th>Estado</th><th>Vencimiento</th><th>Acciones</th></tr></thead><tbody>${lics.map(l=>{const d=l.fecha_vencimiento?Math.ceil((new Date(l.fecha_vencimiento)-new Date())/864e5):null;const dc=d!==null?(d<0?"danger":d<=7?"warn":""):"";return`<tr><td><div style="font-weight:700">${e(l.nombre_negocio)}</div><div style="font-size:11px;color:var(--text3)">${e(l.direccion||"")}</div></td><td><div>${e(l.nombre_contacto)}</div><div style="font-size:11px;color:var(--text3);font-family:'Poppins',sans-serif">${l.email}</div></td><td><span class="badge b-${l.plan}">${l.plan}</span></td><td><span class="badge b-${l.estado}">${l.estado}</span></td><td class="${dc}" style="font-family:'Poppins',sans-serif;font-size:12px">${fd(l.fecha_vencimiento)}${d!==null&&d<=7&&d>=0?`<div style="font-size:10px">⚠ ${d}d</div>`:""}${d!==null&&d<0?'<div style="font-size:10px">🔴 Vencida</div>':""}</td><td><div style="display:flex;gap:5px"><button class="btn btn-g bsm" onclick="editLic('${l.id}')">✏</button>${l.estado!=="suspendido"?`<button class="btn btn-r bsm" onclick="togLic('${l.id}','suspendido')" title="Suspender">⏸</button>`:`<button class="btn btn-a bsm" onclick="togLic('${l.id}','activo')" title="Reactivar">▶</button>`}</div></td></tr>`;}).join("")}</tbody></table>`;
+  }catch(err){console.error(err);}
+}
+
+function openLicModal(){licEid=null;clr("mo-lic");st("ml-t","Nueva Licencia PortoQR");st("lb-save","✓ Guardar");document.getElementById("lb-del").style.display="none";["l-nom","l-con","l-ema","l-tel","l-dir","l-not"].forEach(i=>sv(i,""));sv("l-pla","estandar");sv("l-est","prueba");sv("l-ini",td());const vd=new Date();vd.setFullYear(vd.getFullYear()+1);sv("l-ven",vd.toISOString().split("T")[0]);const sel=document.getElementById("l-pro");sel.innerHTML='<option value="">Sin vincular aún</option>';props.forEach(p=>{const o=document.createElement("option");o.value=p.id;o.textContent=p.nombre;sel.appendChild(o);});openM("mo-lic");}
+
+function editLic(id){const l=lics.find(x=>x.id===id);if(!l)return;licEid=id;clr("mo-lic");st("ml-t","Editar licencia");st("lb-save","✓ Actualizar");document.getElementById("lb-del").style.display="block";sv("l-nom",l.nombre_negocio||"");sv("l-con",l.nombre_contacto||"");sv("l-ema",l.email||"");sv("l-tel",l.telefono||"");sv("l-dir",l.direccion||"");sv("l-not",l.notas||"");sv("l-pla",l.plan||"estandar");sv("l-est",l.estado||"activo");sv("l-ini",l.fecha_inicio||"");sv("l-ven",l.fecha_vencimiento||"");const sel=document.getElementById("l-pro");sel.innerHTML='<option value="">Sin vincular</option>';props.forEach(p=>{const o=document.createElement("option");o.value=p.id;o.textContent=p.nombre;if(p.id===l.propiedad_id)o.selected=true;sel.appendChild(o);});openM("mo-lic");}
+
+async function saveLic(){clr("mo-lic");let ok=true;ok=vf("l-nom","el-nom",gv("l-nom").length>0)&&ok;ok=vf("l-con","el-con",gv("l-con").length>0)&&ok;ok=vf("l-ema","el-ema",/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(gv("l-ema")))&&ok;ok=vf("l-ven","el-ven",gv("l-ven").length>0)&&ok;if(!ok)return;const data={nombre_negocio:gv("l-nom"),nombre_contacto:gv("l-con"),email:gv("l-ema"),telefono:gv("l-tel")||null,direccion:gv("l-dir")||null,plan:gv("l-pla"),estado:gv("l-est"),fecha_inicio:gv("l-ini")||null,fecha_vencimiento:gv("l-ven"),propiedad_id:gv("l-pro")||null,notas:gv("l-not")||null};try{if(licEid){await sbU("licencias",licEid,data);ga("ok","✅ Licencia actualizada");}else{delete data.id;await sbP("licencias",data);ga("ok","✅ Licencia creada");}closeM("mo-lic");await loadLicencias();licEid=null;}catch(err){document.getElementById("al-lic").innerHTML=`<div class="al al-err">Error: ${err.message}</div>`;}}
+
+async function deleteLic(){const l=lics.find(x=>x.id===licEid);if(!confirm(`¿Eliminar licencia de "${l?.nombre_negocio}"?`))return;await sbD("licencias",licEid);closeM("mo-lic");await loadLicencias();ga("ok","Licencia eliminada");}
+async function togLic(id,est){await sbU("licencias",id,{estado:est});await loadLicencias();ga("ok",est==="suspendido"?"Licencia suspendida":"Licencia reactivada");}
+
+async function loadPropsData(){const q=isSA?"":(cu.propiedad_id?`&id=eq.${cu.propiedad_id}`:"");props=await sbG("propiedades",q+"&order=created_at.desc");}
+async function loadPropiedades(){await loadPropsData();if(!props.length){document.getElementById("t-props").innerHTML='<div class="empty">Sin propiedades aún</div>';return;}document.getElementById("t-props").innerHTML=`<table><thead><tr><th>Nombre</th><th>Tipo</th><th>Dirección</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>${props.map(p=>`<tr><td style="font-weight:700">${e(p.nombre)}</td><td><span class="badge b-activo" style="text-transform:capitalize">${(p.tipo||"").replace("_"," ")}</span></td><td style="font-size:12px;color:var(--text2)">${e(p.direccion||p.ciudad||"—")}</td><td><span class="badge b-${p.activa?"activo":"inactivo"}">${p.activa?"Activa":"Inactiva"}</span></td><td><button class="btn btn-r bsm" onclick="togProp('${p.id}',${p.activa})">${p.activa?"Desactivar":"Activar"}</button></td></tr>`).join("")}</tbody></table>`;}
+
+function openPropModal(){clr("mo-prop");["p-nom","p-ciu","p-dir"].forEach(i=>sv(i,""));sv("p-tip","");openM("mo-prop");}
+async function saveProp(){clr("mo-prop");let ok=true;ok=vf("p-nom","ep-nom",gv("p-nom").length>0)&&ok;ok=vf("p-tip","ep-tip",gv("p-tip").length>0)&&ok;if(!ok)return;try{await sbP("propiedades",{nombre:gv("p-nom"),tipo:gv("p-tip"),ciudad:gv("p-ciu")||null,direccion:gv("p-dir")||null});closeM("mo-prop");await loadPropiedades();ga("ok","✅ Propiedad creada");}catch(err){document.getElementById("al-prop").innerHTML=`<div class="al al-err">Error: ${err.message}</div>`;}}
+async function togProp(id,a){await sbU("propiedades",id,{activa:!a});await loadPropiedades();}
+
+async function loadUsersData(){const q=isSA?"&rol=neq.superadmin":(cu.propiedad_id?`&propiedad_id=eq.${cu.propiedad_id}`:"");users=await sbG("usuarios",q+"&order=created_at.desc");}
+async function loadUsuarios(){await loadUsersData();const f=users.filter(u=>u.rol!=="superadmin");st("u-na",f.filter(u=>u.rol==="admin").length);st("u-nr",f.filter(u=>u.rol==="residente").length);st("u-ng",f.filter(u=>u.rol==="guardia").length);if(!f.length){document.getElementById("t-users").innerHTML='<div class="empty">Sin usuarios aún</div>';return;}document.getElementById("t-users").innerHTML=`<table><thead><tr><th>Usuario</th><th>Rol</th><th>Dirección</th><th>Propiedad</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>${f.map(u=>{const p=props.find(x=>x.id===u.propiedad_id);return`<tr><td><div style="font-weight:700">${e(u.nombre)}</div><div style="font-size:11px;color:var(--text3);font-family:'Poppins',sans-serif">${u.email}</div></td><td><span class="badge b-${u.rol}">${u.rol}</span></td><td style="font-size:12px;color:var(--text2)">${e(u.direccion||"—")}</td><td style="font-size:12px">${p?e(p.nombre):"—"}</td><td><span class="badge b-${u.activo?"activo":"inactivo"}">${u.activo?"Activo":"Inactivo"}</span></td><td><div style="display:flex;gap:5px"><button class="btn btn-g bsm" onclick="editUser('${u.id}')">✏</button><button class="btn btn-r bsm" onclick="togUser('${u.id}',${u.activo})">${u.activo?"⏸":"▶"}</button></div></td></tr>`;}).join("")}</tbody></table>`;}
+
+async function openUserModal(){userEid=null;clr("mo-user");st("mu-t","Nuevo Usuario");st("ub-save","✓ Crear Usuario");document.getElementById("ub-del").style.display="none";document.getElementById("pass-req").style.display="inline";["u-nom","u-ema","u-tel","u-pas","u-dir"].forEach(i=>sv(i,""));sv("u-rol","");await loadPropsData();const sel=document.getElementById("u-pro");sel.innerHTML='<option value="">Selecciona...</option>';props.forEach(p=>{const o=document.createElement("option");o.value=p.id;o.textContent=p.nombre;if(!isSA&&p.id===cu.propiedad_id)o.selected=true;sel.appendChild(o);});onRolChange();openM("mo-user");}
+
+function editUser(id){const u=users.find(x=>x.id===id);if(!u)return;userEid=id;clr("mo-user");st("mu-t","Editar usuario");st("ub-save","✓ Actualizar");document.getElementById("ub-del").style.display="block";document.getElementById("pass-req").style.display="none";sv("u-nom",u.nombre||"");sv("u-ema",u.email||"");sv("u-tel",u.telefono||"");sv("u-rol",u.rol||"");sv("u-dir",u.direccion||"");sv("u-pas","");const sel=document.getElementById("u-pro");sel.innerHTML='<option value="">Sin propiedad</option>';props.forEach(p=>{const o=document.createElement("option");o.value=p.id;o.textContent=p.nombre;if(p.id===u.propiedad_id)o.selected=true;sel.appendChild(o);});onRolChange();openM("mo-user");}
+
+function onRolChange(){document.getElementById("fi-dir").style.display=gv("u-rol")==="residente"?"block":"none";}
+
+async function saveUser(){clr("mo-user");let ok=true;ok=vf("u-nom","eu-nom",gv("u-nom").length>0)&&ok;ok=vf("u-ema","eu-ema",/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(gv("u-ema")))&&ok;ok=vf("u-rol","eu-rol",gv("u-rol").length>0)&&ok;ok=vf("u-pro","eu-pro",gv("u-pro").length>0)&&ok;const passPlano=gv("u-pas");if(!userEid){ok=vf("u-pas","eu-pas",passPlano.length>=8)&&ok;}else if(passPlano.length>0){ok=vf("u-pas","eu-pas",passPlano.length>=8)&&ok;}if(!ok)return;try{const data={nombre:gv("u-nom"),email:gv("u-ema").toLowerCase(),telefono:gv("u-tel")||null,rol:gv("u-rol"),propiedad_id:gv("u-pro")||null,direccion:gv("u-dir")||null,activo:true};if(passPlano.length>=8)data.password_hash=await sha256(passPlano);if(userEid){await sbU("usuarios",userEid,data);ga("ok",`✅ Usuario "${data.nombre}" actualizado`);}else{delete data.id;await sbP("usuarios",data);if(['residente','guardia'].includes(data.rol)&&passPlano.length>=8){const prop=props.find(p=>p.id===data.propiedad_id);try{await sendWelcomeEmail(data.nombre,data.email,passPlano,data.rol,prop?.nombre||'PortoQR');ga("ok",`✅ Usuario "${data.nombre}" creado — Email enviado 📧`);}catch(emailErr){console.warn('Email error:',emailErr);ga("ok",`✅ Usuario "${data.nombre}" creado (email no enviado)`);}}else{ga("ok",`✅ Usuario "${data.nombre}" creado`);}}closeM("mo-user");await loadUsuarios();userEid=null;}catch(err){document.getElementById("al-user").innerHTML=`<div class="al al-err">Error: ${err.message}</div>`;}}
+
+async function deleteUser(){const u=users.find(x=>x.id===userEid);if(!confirm(`¿Eliminar a "${u?.nombre}"?`))return;await sbD("usuarios",userEid);closeM("mo-user");await loadUsuarios();ga("ok","Usuario eliminado");}
+async function togUser(id,a){await sbU("usuarios",id,{activo:!a});await loadUsuarios();}
+
+async function loadInvs(){const pf=!isSA&&cu.propiedad_id?`&propiedad_id=eq.${cu.propiedad_id}`:"";invList=await sbG("invitaciones",`${pf}&order=created_at.desc&limit=100`);renderInvs();}
+function renderInvs(){const fe=document.getElementById("if-est")?.value||"";const ft=document.getElementById("if-tip")?.value||"";const l=invList.filter(i=>(!fe||i.estado===fe)&&(!ft||i.tipo===ft));if(!l.length){document.getElementById("t-invs").innerHTML='<div class="empty">Sin invitaciones</div>';return;}document.getElementById("t-invs").innerHTML=`<table><thead><tr><th>Visitante</th><th>Vehículo</th><th>Tipo</th><th>Estado</th><th>Expira</th><th></th></tr></thead><tbody>${l.map(i=>`<tr><td><div style="font-weight:700">${e(i.nombre_visitante)}</div><div style="font-size:11px;color:var(--text3)">${i.empresa||i.motivo||""}</div></td><td style="font-size:12px;font-family:'Poppins',sans-serif">${[i.placa,i.color_auto,i.modelo_auto].filter(Boolean).join(" · ")||"—"}</td><td><span class="badge b-${i.tipo==="urgente"?"prueba":i.tipo==="permanente"?"estandar":"activo"}">${i.tipo}</span></td><td><span class="badge b-${i.estado==="activo"?"activo":i.estado==="cancelado"?"inactivo":"prueba"}">${i.estado}</span></td><td style="font-size:11px;color:var(--text3);font-family:'Poppins',sans-serif">${i.expira_en?new Date(i.expira_en).toLocaleString("es-MX",{dateStyle:"short",timeStyle:"short"}):"∞"}</td><td>${i.estado==="activo"?`<button class="btn btn-r bsm" onclick="cancelInv('${i.id}')">Cancelar</button>`:"—"}</td></tr>`).join("")}</tbody></table>`;}
+async function cancelInv(id){if(!confirm("¿Cancelar esta invitación?"))return;await sbU("invitaciones",id,{estado:"cancelado"});await loadInvs();ga("ok","Invitación cancelada");}
+
+async function loadAcc(){const pf=!isSA&&cu.propiedad_id?`&propiedad_id=eq.${cu.propiedad_id}`:"";const hoy=new Date().toISOString().split("T")[0];const acc=await sbG("accesos",`${pf}&created_at=gte.${hoy}T00:00:00&order=created_at.desc&limit=100`);st("a-e",acc.filter(a=>a.tipo==="entrada"&&a.resultado==="permitido").length);st("a-s",acc.filter(a=>a.tipo==="salida").length);st("a-d",acc.filter(a=>a.resultado==="denegado").length);if(!acc.length){document.getElementById("t-acc").innerHTML='<div class="empty">Sin accesos hoy</div>';return;}document.getElementById("t-acc").innerHTML=`<table><thead><tr><th>Visitante</th><th>Placa</th><th>Tipo</th><th>Resultado</th><th>Hora</th></tr></thead><tbody>${acc.map(a=>{const t=new Date(a.created_at).toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"});return`<tr><td style="font-weight:700">${e(a.nombre_visitante||"—")}</td><td style="font-family:'Poppins',sans-serif;font-size:12px">${a.placa||"—"}</td><td><span class="badge b-${a.tipo==="entrada"?"activo":"prueba"}">${a.tipo.toUpperCase()}</span></td><td><span class="badge b-${a.resultado==="permitido"?"activo":"inactivo"}">${a.resultado}</span></td><td style="font-family:'Poppins',sans-serif;font-size:12px;color:var(--text3)">${t}</td></tr>`;}).join("")}</tbody></table>`;}
+
+function gv(id){return(document.getElementById(id)?.value||"").trim();}
+function sv(id,v){const el=document.getElementById(id);if(el)el.value=v;}
+function st(id,v){const el=document.getElementById(id);if(el)el.textContent=v;}
+function e(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function fd(d){if(!d)return"—";return new Date(d+"T12:00:00").toLocaleDateString("es-MX",{day:"2-digit",month:"short",year:"numeric"});}
+function td(){return new Date().toISOString().split("T")[0];}
+function vf(iid,eid,cond){const el=document.getElementById(iid),er=document.getElementById(eid);if(!cond){el?.classList.add("ef");er?.classList.add("show");return false;}el?.classList.remove("ef");er?.classList.remove("show");return true;}
+function clr(mid){const m=document.getElementById(mid);if(!m)return;m.querySelectorAll(".ef").forEach(el=>el.classList.remove("ef"));m.querySelectorAll(".ferr").forEach(el=>el.classList.remove("show"));m.querySelectorAll(".al").forEach(el=>el.remove());}
+function openM(id){document.getElementById(id)?.classList.add("open");}
+function closeM(id){document.getElementById(id)?.classList.remove("open");clr(id);}
+function ga(type,msg){const el=document.getElementById("ga");el.style.display="block";el.innerHTML=`<div class="al al-${type==="ok"?"ok":"err"}">${msg}</div>`;setTimeout(()=>el.style.display="none",4000);}
+function toggleSidebar(){document.getElementById("sidebar").classList.toggle("open");document.getElementById("sidebar-overlay").classList.toggle("open");}
+function closeSidebar(){document.getElementById("sidebar").classList.remove("open");document.getElementById("sidebar-overlay").classList.remove("open");}
+function logout(){sessionStorage.removeItem("aqr_user");window.location.href="app.html";}
+document.querySelectorAll(".mo").forEach(o=>{o.addEventListener("click",ev=>{if(ev.target===o)closeM(o.id);});});
+</script>
+</body>
+</html>

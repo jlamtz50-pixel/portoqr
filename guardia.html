@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>PortoQR — Guardia</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<!-- PWA -->
+<link rel="manifest" href="/manifest.json"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="PortoQR"/>
+<link rel="apple-touch-icon" href="/icon-192.png"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<!-- QR Scanner -->
+
+<style>
+  :root {
+    --bg:      #080c0a;
+    --bg2:     #0d1210;
+    --surface: #111816;
+    --surface2:#141c19;
+    --border:  #1e2b27;
+    --border2: #2a3d38;
+    --green:   #00e676;
+    --green2:  #00c853;
+    --green-bg:rgba(0,230,118,.08);
+    --red:     #ff1744;
+    --red-bg:  rgba(255,23,68,.08);
+    --amber:   #ffab00;
+    --amber-bg:rgba(255,171,0,.08);
+    --text:    #e8f5e9;
+    --text2:   #78909c;
+    --text3:   #37474f;
+    --mono: 'Poppins', sans-serif;
+    --r:       12px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { height: 100%; }
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: var(--bg); color: var(--text);
+    min-height: 100vh; overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(8,12,10,.95); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .topbar-brand { font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 700; }
+  .topbar-brand span { color: var(--green); }
+  .topbar-user { font-size: 12px; color: var(--text2); font-family: 'Poppins', sans-serif; }
+  .topbar-logout {
+    background: none; border: 1px solid var(--border);
+    border-radius: 6px; padding: 5px 10px;
+    color: var(--text3); font-size: 11px; cursor: pointer;
+    font-family: 'Poppins', sans-serif; transition: .2s;
+  }
+  .topbar-logout:hover { color: var(--red); border-color: var(--red); }
+
+  /* ── TABS ── */
+  .tabs {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    position: sticky; top: 57px; z-index: 40;
+  }
+  .tab {
+    padding: 14px 8px; text-align: center;
+    font-size: 11px; font-family: 'Poppins', sans-serif; font-weight: 700;
+    letter-spacing: .08em; text-transform: uppercase;
+    color: var(--text3); cursor: pointer; border: none;
+    background: none; transition: .15s;
+    border-bottom: 2px solid transparent;
+  }
+  .tab.active { color: var(--green); border-bottom-color: var(--green); }
+  .tab-icon { font-size: 18px; display: block; margin-bottom: 4px; }
+
+  /* ── PANELS ── */
+  .panel { display: none; padding: 20px; }
+  .panel.active { display: block; }
+
+  /* ── SCANNER ── */
+  .scanner-wrap {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r); overflow: hidden; margin-bottom: 16px;
+  }
+  #qr-reader { width: 100%; }
+  #qr-reader video { border-radius: 0 !important; }
+
+  .scan-hint {
+    text-align: center; padding: 16px;
+    font-size: 12px; color: var(--text2); font-family: 'Poppins', sans-serif;
+    border-top: 1px solid var(--border);
+  }
+
+  .btn-scan {
+    width: 100%; padding: 18px; border-radius: var(--r);
+    font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase;
+    border: none; cursor: pointer; transition: all .2s;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .btn-scan-start { background: var(--green); color: var(--bg); }
+  .btn-scan-start:hover { background: #69f0ae; }
+  .btn-scan-stop  { background: var(--red-bg); color: var(--red); border: 1px solid rgba(255,23,68,.3); }
+
+  /* ── RESULT CARD ── */
+  .result-card {
+    border-radius: var(--r); padding: 20px; margin-bottom: 16px;
+    border: 1px solid; animation: slideUp .3s ease;
+    display: none;
+  }
+  @keyframes slideUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+  .result-card.permitido { background: var(--green-bg); border-color: rgba(0,230,118,.3); }
+  .result-card.denegado  { background: var(--red-bg);   border-color: rgba(255,23,68,.3); }
+
+  .result-status {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+  }
+  .result-icon { font-size: 32px; }
+  .result-title { font-size: 18px; font-weight: 700; font-family: 'Poppins', sans-serif; }
+  .result-sub   { font-size: 12px; color: var(--text2); font-family: 'Poppins', sans-serif; margin-top: 2px; }
+
+  .result-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .result-field { background: rgba(0,0,0,.2); border-radius: 8px; padding: 10px 12px; }
+  .result-field-label { font-size: 9px; color: var(--text3); font-family: 'Poppins', sans-serif; letter-spacing: .15em; text-transform: uppercase; margin-bottom: 4px; }
+  .result-field-val   { font-size: 13px; font-weight: 600; }
+
+  .result-actions { display: flex; gap: 10px; margin-top: 16px; }
+  .btn-result {
+    flex: 1; padding: 14px; border-radius: 8px;
+    font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 700;
+    letter-spacing: .08em; text-transform: uppercase;
+    border: none; cursor: pointer; transition: .2s;
+  }
+  .btn-permitir  { background: var(--green); color: var(--bg); }
+  .btn-denegar   { background: var(--red-bg); color: var(--red); border: 1px solid rgba(255,23,68,.3); }
+  .btn-permitir:hover { background: #69f0ae; }
+
+  /* ── URGENTE ── */
+  .section-title {
+    font-size: 11px; font-family: 'Poppins', sans-serif; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--text3); margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title::before { content:''; display:block; width:16px; height:1px; background:var(--green); opacity:.4; }
+
+  .urgente-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+  .urgente-btn {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 18px 12px; text-align: center;
+    cursor: pointer; transition: all .2s; font-family: 'Poppins', sans-serif;
+  }
+  .urgente-btn:hover { border-color: var(--amber); background: var(--amber-bg); }
+  .urgente-btn:active { transform: scale(.97); }
+  .urgente-icon { font-size: 28px; display: block; margin-bottom: 8px; }
+  .urgente-name { font-size: 13px; font-weight: 700; }
+  .urgente-sub  { font-size: 10px; color: var(--text2); margin-top: 3px; font-family: 'Poppins', sans-serif; }
+
+  /* Form urgente */
+  .urgente-form {
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: var(--r); padding: 20px; display: none;
+    animation: slideUp .25s ease;
+  }
+  .urgente-form.open { display: block; }
+  .form-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 10px; color: var(--text3); font-family: 'Poppins', sans-serif; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 7px; }
+  .field input, .field select {
+    width: 100%; background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 13px 14px; color: var(--text);
+    font-family: 'Poppins', sans-serif; font-size: 14px; outline: none; transition: .2s;
+  }
+  .field input:focus, .field select:focus { border-color: var(--green); }
+  .field input::placeholder { color: var(--text3); }
+  .field select option { background: var(--bg2); }
+
+  .btn-generar {
+    width: 100%; padding: 16px; background: var(--amber); border: none;
+    border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--bg);
+    cursor: pointer; transition: .2s; margin-top: 4px;
+  }
+  .btn-generar:hover { background: #ffd740; }
+  .btn-cancel {
+    width: 100%; padding: 12px; background: transparent; border: 1px solid var(--border);
+    border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px;
+    color: var(--text2); cursor: pointer; margin-top: 8px; transition: .2s;
+  }
+  .btn-cancel:hover { border-color: var(--text2); }
+
+  /* ── BITÁCORA ── */
+  .bitacora-list { display: flex; flex-direction: column; gap: 10px; }
+  .bitacora-item {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 14px 16px;
+    display: flex; gap: 14px; align-items: flex-start;
+  }
+  .bita-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 4px;
+  }
+  .bita-dot.entrada { background: var(--green); }
+  .bita-dot.salida  { background: var(--amber); }
+  .bita-dot.denegado{ background: var(--red); }
+  .bita-nombre { font-size: 14px; font-weight: 600; }
+  .bita-detail { font-size: 11px; color: var(--text2); font-family: 'Poppins', sans-serif; margin-top: 3px; }
+  .bita-time   { font-size: 10px; color: var(--text3); font-family: 'Poppins', sans-serif; margin-left: auto; flex-shrink: 0; }
+
+  .empty { text-align: center; padding: 48px 20px; color: var(--text3); font-family: 'Poppins', sans-serif; font-size: 12px; }
+
+  /* ── QR GENERADO ── */
+  .qr-generado {
+    background: var(--surface); border: 1px solid rgba(255,171,0,.3);
+    border-radius: var(--r); padding: 24px; text-align: center;
+    display: none; animation: slideUp .3s ease;
+  }
+  .qr-generado.open { display: block; }
+  #qr-canvas { margin: 16px auto; display: block; }
+  .qr-gen-name { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+  .qr-gen-cat  { display: inline-block; background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(255,171,0,.3); border-radius: 20px; padding: 3px 12px; font-size: 11px; font-family: 'Poppins', sans-serif; margin-bottom: 16px; }
+  .qr-gen-exp  { font-size: 11px; color: var(--text2); font-family: 'Poppins', sans-serif; }
+
+  /* Badge */
+  .badge {
+    display: inline-block; border-radius: 20px; padding: 3px 10px;
+    font-size: 10px; font-weight: 700; font-family: 'Poppins', sans-serif; letter-spacing: .05em;
+  }
+  .badge-entrada  { background: var(--green-bg); color: var(--green); border: 1px solid rgba(0,230,118,.3); }
+  .badge-salida   { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(255,171,0,.3); }
+  .badge-denegado { background: var(--red-bg);   color: var(--red);   border: 1px solid rgba(255,23,68,.3); }
+
+  /* ── RESPONSIVE ── */
+  @media(max-width:768px){
+    .topbar { padding: 12px 16px; }
+    .topbar-brand { font-size: 14px; }
+    .topbar-user { font-size: 11px; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tabs { top: 53px; }
+    .tab { padding: 12px 4px; font-size: 10px; letter-spacing: .04em; }
+    .tab-icon { font-size: 16px; }
+    .panel { padding: 14px 12px; }
+    .btn-scan { padding: 16px; font-size: 12px; }
+    .result-title { font-size: 16px; }
+    .result-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .result-actions { flex-direction: column; gap: 8px; }
+    .btn-result { padding: 14px; }
+    .urgente-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .urgente-btn { padding: 14px 10px; }
+    .urgente-icon { font-size: 24px; }
+    .urgente-name { font-size: 12px; }
+    .field input, .field select { padding: 12px 13px; font-size: 14px; }
+    .bitacora-item { padding: 12px 14px; gap: 10px; }
+    .bita-nombre { font-size: 13px; }
+  }
+  @media(max-width:380px){
+    .result-grid { grid-template-columns: 1fr; }
+    .urgente-grid { grid-template-columns: 1fr; }
+    .tab-icon { font-size: 15px; margin-bottom: 2px; }
+  }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">Porto<span>QR</span></div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <div class="topbar-user" id="topbar-user">Guardia</div>
+    <button class="topbar-logout" onclick="openCambiarPass()" style="border-color:var(--amber);color:var(--amber)">🔑</button>
+    <button class="topbar-logout" onclick="logout()">Salir</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('scanner')" id="tab-scanner">
+    <span class="tab-icon">📷</span>Escanear
+  </button>
+  <button class="tab" onclick="switchTab('urgente')" id="tab-urgente">
+    <span class="tab-icon">⚡</span>Urgente
+  </button>
+  <button class="tab" onclick="switchTab('bitacora')" id="tab-bitacora">
+    <span class="tab-icon">📋</span>Bitácora
+  </button>
+</div>
+
+<!-- ── PANEL: SCANNER ── -->
+<div class="panel active" id="panel-scanner">
+
+  <!-- Resultado -->
+  <div class="result-card" id="result-card">
+    <div class="result-status">
+      <div class="result-icon" id="result-icon">✅</div>
+      <div>
+        <div class="result-title" id="result-title">ACCESO PERMITIDO</div>
+        <div class="result-sub"  id="result-sub">Entrada registrada</div>
+      </div>
+    </div>
+    <div class="result-grid" id="result-grid"></div>
+    <div class="result-actions" id="result-actions"></div>
+  </div>
+
+  <!-- Scanner en tiempo real -->
+  <div id="qr-reader" style="width:100%;border-radius:12px;overflow:hidden"></div>
+  <div class="scan-hint" id="scan-hint">Toca Iniciar y apunta al código QR</div>
+
+  <button class="btn-scan btn-scan-start" id="btn-scan" onclick="toggleScanner()">
+    📷 Iniciar Escáner
+  </button>
+
+  <!-- Input manual -->
+  <div style="margin-top:16px">
+    <div style="font-size:11px;color:var(--text3);font-family:'Poppins',sans-serif;text-align:center;margin-bottom:10px;letter-spacing:.1em">── O INGRESA EL CÓDIGO MANUALMENTE ──</div>
+    <div style="display:flex;gap:8px">
+      <input type="text" id="manual-code" placeholder="Pega el código UUID aquí..."
+        style="flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none"/>
+      <button class="btn-scan" style="width:auto;padding:12px 16px;background:var(--green);color:var(--bg);border-radius:8px;font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;border:none;cursor:pointer" onclick="procesarManual()">→</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── PANEL: URGENTE ── -->
+<div class="panel" id="panel-urgente">
+  <div class="section-title">Acceso de emergencia</div>
+
+  <div class="urgente-grid">
+    <div class="urgente-btn" onclick="openUrgenteForm('delivery','🛵','Delivery')">
+      <span class="urgente-icon">🛵</span>
+      <div class="urgente-name">Delivery</div>
+      <div class="urgente-sub">Reparto / paquetería</div>
+    </div>
+    <div class="urgente-btn" onclick="openUrgenteForm('policia','🚔','Policía')">
+      <span class="urgente-icon">🚔</span>
+      <div class="urgente-name">Policía</div>
+      <div class="urgente-sub">Seguridad pública</div>
+    </div>
+    <div class="urgente-btn" onclick="openUrgenteForm('ambulancia','🚑','Ambulancia')">
+      <span class="urgente-icon">🚑</span>
+      <div class="urgente-name">Ambulancia</div>
+      <div class="urgente-sub">Servicios médicos</div>
+    </div>
+    <div class="urgente-btn" onclick="openUrgenteForm('basura','🗑','Basura')">
+      <span class="urgente-icon">🗑️</span>
+      <div class="urgente-name">Basura</div>
+      <div class="urgente-sub">Recolección</div>
+    </div>
+    <div class="urgente-btn" onclick="openUrgenteForm('bomberos','🚒','Bomberos')">
+      <span class="urgente-icon">🚒</span>
+      <div class="urgente-name">Bomberos</div>
+      <div class="urgente-sub">Emergencia</div>
+    </div>
+    <div class="urgente-btn" onclick="openUrgenteForm('otro','🔔','Otro')">
+      <span class="urgente-icon">🔔</span>
+      <div class="urgente-name">Otro</div>
+      <div class="urgente-sub">Visita urgente</div>
+    </div>
+  </div>
+
+  <!-- Formulario urgente -->
+  <div class="urgente-form" id="urgente-form">
+    <div class="form-title" id="urgente-form-title">🛵 Nuevo Delivery</div>
+    <div class="field">
+      <label>Nombre / Descripción *</label>
+      <input type="text" id="urg-nombre" placeholder="Ej: Amazon, DHL, Juan..." />
+    </div>
+    <div class="field">
+      <label>Placa del vehículo</label>
+      <input type="text" id="urg-placa" placeholder="ABC-123" style="text-transform:uppercase"/>
+    </div>
+    <div class="field">
+      <label>Destino (unidad / casa)</label>
+      <input type="text" id="urg-destino" placeholder="Casa 12, Depto 3B..." />
+    </div>
+    <input type="hidden" id="urg-categoria"/>
+    <button class="btn-generar" onclick="generarUrgente()">⚡ Generar Acceso</button>
+    <button class="btn-cancel" onclick="closeUrgenteForm()">Cancelar</button>
+  </div>
+
+  <!-- QR generado -->
+  <div class="qr-generado" id="qr-generado">
+    <div class="qr-gen-cat" id="qr-gen-cat">Delivery</div>
+    <div class="qr-gen-name" id="qr-gen-name">—</div>
+    <canvas id="qr-canvas" width="180" height="180"></canvas>
+    <div class="qr-gen-exp" id="qr-gen-exp">Válido por 2 horas</div>
+    <button class="btn-cancel" style="margin-top:16px" onclick="closeQrGenerado()">← Nuevo acceso</button>
+  </div>
+</div>
+
+<!-- ── PANEL: BITÁCORA ── -->
+<div class="panel" id="panel-bitacora">
+  <div class="section-title">Accesos de hoy</div>
+  <div id="bitacora-list"><div class="empty">Cargando bitácora...</div></div>
+</div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────
+const SUPABASE_URL = "https://ghgwegvvawhgzmzjspkl.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdoZ3dlZ3Z2YXdoZ3ptempzcGtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1ODQ3ODAsImV4cCI6MjA4ODE2MDc4MH0.cbR9QXTWqD4XEdPSj1tz7Mzd9MuAg4VmK5T4es4AKP8";
+
+// ── ESTADO ──────────────────────────────────────────────────────
+let currentUser  = null;
+let scanner      = null;
+let scannerActive= false;
+let pendingInv   = null; // invitación pendiente de confirmar
+let bitacoraData = [];
+
+// ── INIT ────────────────────────────────────────────────────────
+(function init() {
+  const s = sessionStorage.getItem("aqr_user");
+  if (!s) { window.location.href = "app.html"; return; }
+  currentUser = JSON.parse(s);
+  if (currentUser.rol !== "guardia") { window.location.href = "app.html"; return; }
+  document.getElementById("topbar-user").textContent = currentUser.nombre;
+  loadBitacora();
+})();
+
+// ── SUPABASE HELPERS ─────────────────────────────────────────────
+const h = { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY, "Content-Type": "application/json" };
+
+async function sbGet(table, qs = "") {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=*${qs}`, { headers: h });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function sbInsert(table, data) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+    method: "POST", headers: { ...h, Prefer: "return=representation" }, body: JSON.stringify(data)
+  });
+  if (!r.ok) throw new Error(await r.text());
+  const res = await r.json(); return Array.isArray(res) ? res[0] : res;
+}
+async function sbUpdate(table, id, data) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
+    method: "PATCH", headers: { ...h, Prefer: "return=representation" }, body: JSON.stringify(data)
+  });
+  if (!r.ok) throw new Error(await r.text());
+  const res = await r.json(); return Array.isArray(res) ? res[0] : res;
+}
+
+// ── TABS ─────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.getElementById("panel-" + tab).classList.add("active");
+  document.getElementById("tab-" + tab).classList.add("active");
+  if (tab === "bitacora") loadBitacora();
+  if (tab !== "scanner") stopScanner();
+}
+
+// ── SCANNER ──────────────────────────────────────────────────────
+function toggleScanner() {
+  if (scannerActive) stopScanner();
+  else startScanner();
+}
+
+function startScanner() {
+  clearResult();
+  document.getElementById("qr-reader").innerHTML = "";
+
+  const html5QrCode = new Html5Qrcode("qr-reader");
+  scanner = html5QrCode;
+
+  Html5Qrcode.getCameras().then(cameras => {
+    if (!cameras || cameras.length === 0) {
+      document.getElementById("scan-hint").textContent = "⚠ No se encontró cámara";
+      return;
+    }
+    // Preferir cámara trasera
+    const cam = cameras.find(c => /back|rear|environment/i.test(c.label)) || cameras[cameras.length - 1];
+
+    let processed = false;
+    html5QrCode.start(
+      cam.id,
+      { fps: 10, qrbox: 250, aspectRatio: 1.0 },
+      (decodedText) => {
+        if (processed) return;
+        processed = true;
+        stopScanner();
+        onQrSuccess(decodedText);
+      },
+      () => {}
+    ).then(() => {
+      scannerActive = true;
+      const btn = document.getElementById("btn-scan");
+      btn.className = "btn-scan btn-scan-stop";
+      btn.textContent = "⏹ Detener";
+      document.getElementById("scan-hint").textContent = "Apunta al código QR...";
+    }).catch(err => {
+      document.getElementById("scan-hint").textContent = "⚠ Error: " + err;
+      console.error(err);
+    });
+  }).catch(err => {
+    document.getElementById("scan-hint").textContent = "⚠ Sin acceso a cámara: " + err;
+  });
+}
+
+function stopScanner() {
+  if (scanner && scannerActive) {
+    scanner.stop().then(() => {
+      scanner.clear();
+      scanner = null;
+      scannerActive = false;
+      document.getElementById("qr-reader").innerHTML = "";
+      const btn = document.getElementById("btn-scan");
+      btn.className = "btn-scan btn-scan-start";
+      btn.textContent = "📷 Iniciar Escáner";
+      document.getElementById("scan-hint").textContent = "Toca Iniciar y apunta al código QR";
+    }).catch(e => console.error(e));
+  }
+}
+
+async function onQrSuccess(codigo) {
+  // Extraer solo el code= si viene una URL completa
+  try {
+    const u = new URL(codigo);
+    const c = u.searchParams.get("code");
+    if (c) codigo = c;
+  } catch(e) {}
+  await procesarQR(codigo);
+}
+
+async function procesarManual() {
+  const input = document.getElementById("manual-code");
+  const code = input.value.trim();
+  if (!code) return;
+  input.value = "";
+  await procesarQR(code);
+}
+
+async function procesarQR(codigo) {
+  try {
+    // Expirar automáticamente las vencidas primero
+    const invs = await sbGet("invitaciones", `&codigo_qr=eq.${encodeURIComponent(codigo)}`);
+
+    if (!invs.length) {
+      showResult("denegado", "❌", "QR INVÁLIDO", "Código no encontrado en el sistema", null);
+      return;
+    }
+
+    const inv = invs[0];
+
+    // Verificar expiración por tiempo
+    if (inv.expira_en && new Date(inv.expira_en) < new Date()) {
+      await sbUpdate("invitaciones", inv.id, { estado: "expirado" });
+      showResult("denegado", "⏰", "QR EXPIRADO", "Este código ya no es válido", null);
+      return;
+    }
+
+    // Verificar estado
+    if (inv.estado === "cancelado") {
+      showResult("denegado", "🚫", "QR CANCELADO", "Esta invitación fue cancelada", null);
+      return;
+    }
+    if (inv.estado === "expirado") {
+      showResult("denegado", "⏰", "QR EXPIRADO", "Este código ya no es válido", null);
+      return;
+    }
+
+    // Determinar si es entrada o salida
+    // Buscar último acceso para esta invitación
+    const accesos = await sbGet("accesos", `&invitacion_id=eq.${inv.id}&order=created_at.desc&limit=1`);
+    const ultimoAcceso = accesos[0];
+    const esSalida = ultimoAcceso && ultimoAcceso.tipo === "entrada";
+
+    pendingInv = { inv, esSalida };
+
+    // Mostrar datos
+    const tipo = esSalida ? "SALIDA" : "ENTRADA";
+    const icon = esSalida ? "🟡" : "✅";
+    const sub  = esSalida ? "Confirmar salida del visitante" : "Confirmar entrada del visitante";
+
+    showResult("permitido", icon, `${tipo} — ${inv.nombre_visitante}`, sub, inv, esSalida);
+
+  } catch(e) {
+    showResult("denegado", "⚠️", "ERROR", "No se pudo procesar el QR", null);
+    console.error(e);
+  }
+}
+
+function showResult(tipo, icon, title, sub, inv, esSalida) {
+  const card = document.getElementById("result-card");
+  card.className = `result-card ${tipo}`;
+  card.style.display = "block";
+  document.getElementById("result-icon").textContent = icon;
+  document.getElementById("result-title").textContent = title;
+  document.getElementById("result-sub").textContent = sub;
+
+  // Grid de datos
+  const grid = document.getElementById("result-grid");
+  if (inv) {
+    grid.innerHTML = `
+      ${field("Visitante", inv.nombre_visitante)}
+      ${field("Motivo", inv.empresa || inv.motivo || "—")}
+      ${field("Placa", inv.placa || "—")}
+      ${field("Vehículo", [inv.color_auto, inv.modelo_auto].filter(Boolean).join(" ") || "—")}
+      ${field("Teléfono", inv.telefono || "—")}
+      ${field("Tipo QR", inv.tipo === "permanente" ? "🔄 Permanente" : inv.tipo === "urgente" ? "⚡ Urgente" : "🎫 Visita")}
+    `;
+  } else { grid.innerHTML = ""; }
+
+  // Acciones
+  const actions = document.getElementById("result-actions");
+  if (inv) {
+    const accionLabel = esSalida ? "Registrar Salida" : "Permitir Entrada";
+    actions.innerHTML = `
+      <button class="btn-result btn-permitir" onclick="confirmarAcceso(true)">✓ ${accionLabel}</button>
+      <button class="btn-result btn-denegar"  onclick="confirmarAcceso(false)">✗ Denegar</button>
+    `;
+  } else {
+    actions.innerHTML = `<button class="btn-result btn-denegar" onclick="clearResult()">← Volver</button>`;
+  }
+
+  // Vibrar en celular
+  if (navigator.vibrate) {
+    navigator.vibrate(tipo === "permitido" ? [100] : [100, 50, 100]);
+  }
+}
+
+function field(label, val) {
+  return `<div class="result-field">
+    <div class="result-field-label">${label}</div>
+    <div class="result-field-val">${val}</div>
+  </div>`;
+}
+
+async function confirmarAcceso(permitir) {
+  if (!pendingInv) return;
+  const { inv, esSalida } = pendingInv;
+  const tipoAcceso = esSalida ? "salida" : "entrada";
+
+  try {
+    // Registrar acceso
+    await sbInsert("accesos", {
+      invitacion_id:    inv.id,
+      guardia_id:       currentUser.id,
+      propiedad_id:     inv.propiedad_id,
+      tipo:             tipoAcceso,
+      resultado:        permitir ? "permitido" : "denegado",
+      nombre_visitante: inv.nombre_visitante,
+      placa:            inv.placa,
+    });
+
+    // Si es visita (no permanente) y es salida → invalidar QR
+    if (permitir && esSalida && inv.tipo !== "permanente") {
+      await sbUpdate("invitaciones", inv.id, { estado: "usado" });
+    }
+
+    // Si es visita y ya alcanzó max_usos → invalidar
+    if (permitir && !esSalida && inv.tipo === "visita") {
+      const nuevosUsos = (inv.usos_actuales || 0) + 1;
+      const nuevoEstado = nuevosUsos >= (inv.max_usos || 1) ? "usado" : "activo";
+      await sbUpdate("invitaciones", inv.id, { usos_actuales: nuevosUsos, estado: nuevoEstado });
+    }
+
+    const msg = permitir
+      ? (esSalida ? "✅ Salida registrada" : "✅ Entrada registrada")
+      : "🚫 Acceso denegado";
+    document.getElementById("result-sub").textContent = msg;
+    document.getElementById("result-actions").innerHTML =
+      `<button class="btn-result btn-denegar" onclick="clearResult()">← Nuevo escaneo</button>`;
+
+    // Agregar a bitácora local
+    bitacoraData.unshift({
+      nombre: inv.nombre_visitante,
+      tipo: tipoAcceso,
+      resultado: permitir ? "permitido" : "denegado",
+      placa: inv.placa,
+      time: new Date().toLocaleTimeString("es-MX", { hour:"2-digit", minute:"2-digit" })
+    });
+    pendingInv = null;
+
+  } catch(e) {
+    alert("Error al registrar acceso: " + e.message);
+  }
+}
+
+function clearResult() {
+  document.getElementById("result-card").style.display = "none";
+  pendingInv = null;
+}
+
+// ── URGENTE ──────────────────────────────────────────────────────
+let urgenteCategoria = "";
+
+function openUrgenteForm(cat, icon, nombre) {
+  urgenteCategoria = cat;
+  document.getElementById("urg-categoria").value = cat;
+  document.getElementById("urgente-form-title").textContent = `${icon} Acceso ${nombre}`;
+  document.getElementById("urg-nombre").value = "";
+  document.getElementById("urg-placa").value  = "";
+  document.getElementById("urg-destino").value= "";
+  document.getElementById("urgente-form").classList.add("open");
+  document.getElementById("qr-generado").classList.remove("open");
+  document.getElementById("urg-nombre").focus();
+}
+
+function closeUrgenteForm() {
+  document.getElementById("urgente-form").classList.remove("open");
+}
+
+async function generarUrgente() {
+  const nombre  = document.getElementById("urg-nombre").value.trim();
+  const placa   = document.getElementById("urg-placa").value.trim().toUpperCase();
+  const destino = document.getElementById("urg-destino").value.trim();
+  if (!nombre) { alert("Ingresa el nombre o descripción"); return; }
+
+  try {
+    const expira = new Date();
+    expira.setHours(expira.getHours() + 2); // 2 horas
+
+    const inv = await sbInsert("invitaciones", {
+      nombre_visitante:     nombre,
+      placa:                placa || null,
+      motivo:               destino || urgenteCategoria,
+      tipo:                 "urgente",
+      estado:               "activo",
+      categoria_urgente:    urgenteCategoria,
+      generado_por_guardia: true,
+      guardia_id:           currentUser.id,
+      propiedad_id:         currentUser.propiedad_id,
+      expira_en:            expira.toISOString(),
+      max_usos:             1,
+    });
+
+    // Generar QR visual
+    closeUrgenteForm();
+    mostrarQrGenerado(inv, nombre);
+
+    // Registrar entrada inmediata
+    await sbInsert("accesos", {
+      invitacion_id:    inv.id,
+      guardia_id:       currentUser.id,
+      propiedad_id:     currentUser.propiedad_id,
+      tipo:             "entrada",
+      resultado:        "permitido",
+      nombre_visitante: nombre,
+      placa:            placa || null,
+    });
+
+  } catch(e) {
+    alert("Error al generar acceso: " + e.message);
+  }
+}
+
+function mostrarQrGenerado(inv, nombre) {
+  document.getElementById("qr-gen-name").textContent = nombre;
+  document.getElementById("qr-gen-cat").textContent  = inv.categoria_urgente || "urgente";
+  document.getElementById("qr-gen-exp").textContent  = "Válido por 2 horas · Expira al salir";
+  // Dibujar QR simple en canvas
+  drawSimpleQR(inv.codigo_qr);
+  document.getElementById("qr-generado").classList.add("open");
+}
+
+function drawSimpleQR(texto) {
+  // QR visual simple con canvas (sin librería externa)
+  const canvas = document.getElementById("qr-canvas");
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, 180, 180);
+  ctx.fillStyle = "#080c0a";
+  // Patrón de posición (esquinas)
+  [[10,10],[130,10],[10,130]].forEach(([x,y]) => {
+    ctx.fillRect(x,y,40,40);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(x+6,y+6,28,28);
+    ctx.fillStyle = "#080c0a";
+    ctx.fillRect(x+12,y+12,16,16);
+    ctx.fillStyle = "#080c0a";
+  });
+  // Texto del código (legible)
+  ctx.fillStyle = "#666";
+  ctx.font = "8px monospace";
+  ctx.textAlign = "center";
+  ctx.fillText(texto.substring(0,20)+"...", 90, 170);
+}
+
+function closeQrGenerado() {
+  document.getElementById("qr-generado").classList.remove("open");
+}
+
+// ── BITÁCORA ─────────────────────────────────────────────────────
+async function loadBitacora() {
+  try {
+    const hoy = new Date().toISOString().split("T")[0];
+    const accesos = await sbGet("accesos",
+      `&propiedad_id=eq.${currentUser.propiedad_id}&created_at=gte.${hoy}T00:00:00&order=created_at.desc&limit=50`
+    );
+    bitacoraData = accesos;
+    renderBitacora(accesos);
+  } catch(e) {
+    document.getElementById("bitacora-list").innerHTML =
+      '<div class="empty">Error al cargar bitácora</div>';
+  }
+}
+
+function renderBitacora(accesos) {
+  if (!accesos.length) {
+    document.getElementById("bitacora-list").innerHTML =
+      '<div class="empty">Sin accesos registrados hoy</div>';
+    return;
+  }
+  document.getElementById("bitacora-list").innerHTML =
+    `<div class="bitacora-list">` +
+    accesos.map(a => {
+      const dotClass = a.resultado === "denegado" ? "denegado" : a.tipo;
+      const time = new Date(a.created_at).toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"});
+      return `
+        <div class="bitacora-item">
+          <div class="bita-dot ${dotClass}"></div>
+          <div style="flex:1">
+            <div class="bita-nombre">${a.nombre_visitante || "—"}</div>
+            <div class="bita-detail">
+              ${a.placa ? a.placa + " · " : ""}
+              <span class="badge badge-${a.resultado === "denegado" ? "denegado" : a.tipo}">${a.tipo.toUpperCase()}</span>
+            </div>
+          </div>
+          <div class="bita-time">${time}</div>
+        </div>`;
+    }).join("") +
+    `</div>`;
+}
+
+// ── LOGOUT ───────────────────────────────────────────────────────
+function logout() {
+  if (scannerActive) stopScanner();
+  sessionStorage.removeItem("aqr_user");
+  window.location.href = "app.html";
+}
+
+// ── SHA256 ────────────────────────────────────────────────────────
+async function sha256(s) {
+  const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2,"0")).join("");
+}
+
+// ── CAMBIAR CONTRASEÑA ────────────────────────────────────────────
+function openCambiarPass() {
+  document.getElementById("mo-pass").style.display = "flex";
+  ["cp-actual","cp-nueva","cp-confirma"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("cp-err").textContent = "";
+}
+function closeCambiarPass() {
+  document.getElementById("mo-pass").style.display = "none";
+}
+async function guardarNuevaPass() {
+  const actual   = document.getElementById("cp-actual").value;
+  const nueva    = document.getElementById("cp-nueva").value;
+  const confirma = document.getElementById("cp-confirma").value;
+  const errEl    = document.getElementById("cp-err");
+  errEl.textContent = "";
+
+  if (!actual || !nueva || !confirma) { errEl.textContent = "Completa todos los campos"; return; }
+  if (nueva.length < 8) { errEl.textContent = "Mínimo 8 caracteres"; return; }
+  if (nueva !== confirma) { errEl.textContent = "Las contraseñas no coinciden"; return; }
+
+  const hashActual = await sha256(actual);
+  const users = await sbGet("usuarios", `&id=eq.${currentUser.id}&password_hash=eq.${hashActual}`);
+  if (!users.length) { errEl.textContent = "La contraseña actual es incorrecta"; return; }
+
+  const hashNueva = await sha256(nueva);
+  await sbUpdate("usuarios", currentUser.id, { password_hash: hashNueva });
+  closeCambiarPass();
+  showToast("✅ Contraseña actualizada", "green");
+}
+
+// Registrar Service Worker (PWA)
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js')
+    .then(() => console.log('SW registrado'))
+    .catch(e => console.log('SW error:', e));
+}
+</script>
+
+<!-- MODAL CAMBIAR CONTRASEÑA -->
+<div id="mo-pass" style="position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:500;display:none;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:28px;width:100%;max-width:380px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <div style="font-size:17px;font-weight:800;">🔑 Cambiar contraseña</div>
+      <button onclick="closeCambiarPass()" style="background:none;border:none;color:var(--text3);font-size:22px;cursor:pointer;">✕</button>
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:10px;color:var(--text3);letter-spacing:.14em;text-transform:uppercase;margin-bottom:7px;">Contraseña actual</label>
+      <input type="password" id="cp-actual" placeholder="••••••••" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:13px 14px;color:var(--text);font-family:'Poppins',sans-serif;font-size:14px;outline:none;">
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:10px;color:var(--text3);letter-spacing:.14em;text-transform:uppercase;margin-bottom:7px;">Nueva contraseña</label>
+      <input type="password" id="cp-nueva" placeholder="Mínimo 8 caracteres" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:13px 14px;color:var(--text);font-family:'Poppins',sans-serif;font-size:14px;outline:none;">
+    </div>
+    <div style="margin-bottom:8px;">
+      <label style="display:block;font-size:10px;color:var(--text3);letter-spacing:.14em;text-transform:uppercase;margin-bottom:7px;">Confirmar nueva contraseña</label>
+      <input type="password" id="cp-confirma" placeholder="••••••••" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:13px 14px;color:var(--text);font-family:'Poppins',sans-serif;font-size:14px;outline:none;">
+    </div>
+    <div id="cp-err" style="font-size:12px;color:var(--red);margin-bottom:14px;min-height:16px;"></div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="closeCambiarPass()" style="flex:1;padding:12px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text2);font-family:'Poppins',sans-serif;font-size:13px;cursor:pointer;">Cancelar</button>
+      <button onclick="guardarNuevaPass()" style="flex:2;padding:12px;background:var(--green);border:none;border-radius:8px;color:var(--bg);font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
